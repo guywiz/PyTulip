@@ -1,6 +1,6 @@
 # Two mode import
 
-Imports a graph from a csv file.
+Imports a two mode network (bipartite graph) from a csv file.
 
 *   Entities are listed in row and column headers.
 *   Entries can be separated by semi-colon (default), comma, etc.
