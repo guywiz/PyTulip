@@ -7,5 +7,5 @@ Code in this repository should always come in pairs: a python class that can be 
 
 (Pairs of) code files follow the naming convention:
 
-*   <UtilityClass>.py (FabulousMetric.py, for instance)
-*   <UtilityClass>Plugin.py (FabulousMetricPlugin.py, for instance)
+*   \<UtilityClass\>.py (FabulousMetric.py, for instance)
+*   \<UtilityClass\>Plugin.py (FabulousMetricPlugin.py, for instance)
