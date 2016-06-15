@@ -1,16 +1,6 @@
 from tulip import *
 import tulipplugins
 
-def printit(f):
-
-    def printed(*args, **kw):
-
-        result = f(*args, **kw)
-        print 'Executed method: %s ' % (f.__name__)
-        return result
-
-    return printed
-
 class OneModeProjection(object):
 	'''
 	Implements the projection of two-mode networks onto one-mode networks, with different possible weighting schemes:
@@ -27,7 +17,6 @@ class OneModeProjection(object):
 	be specified as part of the plugin parameters).
 	'''
 
-	@printit
 	def __init__(self, graph, weighting_scheme = 'Giatsidis', entity_type = None, substrates_name = None):
 		'''
 		The graph needs to have a subgraph containing (usually a cloned copy of) the two-mode network,
@@ -47,12 +36,10 @@ class OneModeProjection(object):
 
 		self.catalyst_map = {}
 
-	@printit
 	def neighbor_sets(self):
 		for s in self.substrates:
 			self.catalyst_map[s] = frozenset([catalyst for catalyst in self.two_mode_graph.getInOutNodes(s)])
 
-	@printit
 	def project(self):
 		catalysts = [n for n in self.two_mode_graph.getNodes() if self.entity_type[n] != self.substrates_name]
 		for c in catalysts:
@@ -69,19 +56,15 @@ class OneModeProjection(object):
 			except ZeroDivisionError: # happens when c has degree 1, in which case there are no inferred edges
 				pass
 
-	@printit
 	def Giatsidis_weight_function(self, catalyst):
 		return 1.0 / self.graph.deg(catalyst)
 
-	@printit
 	def clique_weight_function(self, catalyst):
 		return 2.0 / self.graph.deg(catalyst) / (self.graph.deg(catalyst) - 1)
 
-	@printit
 	def uniform_weight(self, catalyst):
 		return 1.0
 
-	@printit
 	def check(self):
 		# This method is called before applying the algorithm on the input graph.
 		# You can perform some precondition checks here.
@@ -91,7 +74,6 @@ class OneModeProjection(object):
 		# and the second one can be used to provide an error message
 		return (True, "")
 
-	@printit
 	def run(self):
 		# This method is the entry point of the algorithm when it is called
 		# and must contain its implementation.
@@ -126,8 +108,6 @@ class OneModeProjection(object):
 		self.project()
 		return True
 
-
-@printit
 def main(graph):
 	et = graph.getStringProperty('node_type')
 	omp = OneModeProjection(graph, weighting_scheme='Clique', entity_type=et, substrates_name='author')
