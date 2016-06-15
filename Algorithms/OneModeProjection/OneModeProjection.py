@@ -1,7 +1,17 @@
 from tulip import *
 import tulipplugins
 
-class OneModeProjection(tlp.Algorithm):
+def printit(f):
+
+    def printed(*args, **kw):
+
+        result = f(*args, **kw)
+        print 'Executed method: %s ' % (f.__name__)
+        return result
+
+    return printed
+
+class OneModeProjection(object):
 	'''
 	Implements the projection of two-mode networks onto one-mode networks, with different possible weighting schemes:
 
@@ -17,12 +27,34 @@ class OneModeProjection(tlp.Algorithm):
 	be specified as part of the plugin parameters).
 	'''
 
+	@printit
+	def __init__(self, graph, weighting_scheme = 'Giatsidis', entity_type = None, substrates_name = None):
+		'''
+		The graph needs to have a subgraph containing (usually a cloned copy of) the two-mode network,
+		with default name 'Two_mode_graph'.
+		The projected one-mode network will thenbe created as a sibling of that two mode network.
+		'''
+		self.graph = graph
+		self.weighting_scheme = weighting_scheme
+		if entity_type == None:
+			self.entity_type = self.graph.getStringProperty('viewLabel')
+		else:
+			self.entity_type = entity_type
+		if substrates_name == None:
+			self.substrates_name = 'A'
+		else:
+			self.substrates_name = substrates_name
+
+		self.catalyst_map = {}
+
+	@printit
 	def neighbor_sets(self):
 		for s in self.substrates:
 			self.catalyst_map[s] = frozenset([catalyst for catalyst in self.two_mode_graph.getInOutNodes(s)])
 
+	@printit
 	def project(self):
-		catalysts = [n for n in self.two_mode_graph.getNodes() if self.dataSet["Entity type"][n] != self.dataSet["Substrates (projected entities)"]]
+		catalysts = [n for n in self.two_mode_graph.getNodes() if self.entity_type[n] != self.substrates_name]
 		for c in catalysts:
 			try:
 				c_weight = self.weight_function(c)
@@ -37,39 +69,19 @@ class OneModeProjection(tlp.Algorithm):
 			except ZeroDivisionError: # happens when c has degree 1, in which case there are no inferred edges
 				pass
 
+	@printit
 	def Giatsidis_weight_function(self, catalyst):
 		return 1.0 / self.graph.deg(catalyst)
 
+	@printit
 	def clique_weight_function(self, catalyst):
 		return 2.0 / self.graph.deg(catalyst) / (self.graph.deg(catalyst) - 1)
 
+	@printit
 	def uniform_weight(self, catalyst):
 		return 1.0
 
-	def compute_cores(self):
-		self.kcore = self.substrate_graph.getDoubleProperty('kcore')
-		kcore_dataset = tlp.getDefaultPluginParameters('K-Cores')
-		kcore_dataset['metric'] = self.edge_weight
-		self.substrate_graph.applyDoubleAlgorithm('K-Cores', self.kcore, kcore_dataset)
-
-		eqvalue_dataset = tlp.getDefaultPluginParameters('Equal Value')
-		eqvalue_dataset['Property'] = self.kcore
-		self.substrate_graph.applyAlgorithm('Equal Value', eqvalue_dataset)
-
-	def __init__(self, context):
-		tlp.Algorithm.__init__(self, context)
-		# you can add parameters to the plugin here through the following syntax
-		# self.add<Type>Parameter("<paramName>", "<paramDoc>", "<paramDefaultValue>")
-		# (see documentation of class tlp.WithParameter to see what types of parameters are supported)
-		self.addStringPropertyParameter("Entity type", "Property from which entity type is inspected", 'viewLabel')
-		self.addStringParameter("Substrates (projected entities)", "Entity type (name) on which two-mode graph is projected", "")
-		self.addStringCollectionParameter("Weighting scheme", \
-				"Weight computation rule (Giatsidis=catalyst degree / Clique=induced clique size)",\
-				"Giatsidis;Clique;Uniform 1.0 weight")
-		self.addBooleanParameter("Build k-cores", "Builds core subgraphs", "False")
-
-		self.catalyst_map = {}
-
+	@printit
 	def check(self):
 		# This method is called before applying the algorithm on the input graph.
 		# You can perform some precondition checks here.
@@ -79,6 +91,7 @@ class OneModeProjection(tlp.Algorithm):
 		# and the second one can be used to provide an error message
 		return (True, "")
 
+	@printit
 	def run(self):
 		# This method is the entry point of the algorithm when it is called
 		# and must contain its implementation.
@@ -95,26 +108,27 @@ class OneModeProjection(tlp.Algorithm):
 		self.two_mode_graph = self.graph.getSubGraph('Two_mode_graph')
 		if self.two_mode_graph == None:
 			self.two_mode_graph = self.graph.addCloneSubGraph('Two_mode_graph')
-		self.substrates = [n for n in self.two_mode_graph.getNodes() if self.dataSet["Entity type"][n] == self.dataSet["Substrates (projected entities)"]]
+		self.substrates = [n for n in self.two_mode_graph.getNodes() if self.entity_type[n] == self.substrates_name]
 		self.substrate_graph = self.graph.addSubGraph()
+		self.substrate_graph.setName(self.substrates_name + '_graph_' + self.weighting_scheme)
 		for s in self.substrates:
 			self.substrate_graph.addNode(s)
-		self.substrate_graph.setName(self.dataSet['Substrates (projected entities)'] + '_graph_' + self.dataSet['Weighting scheme'])
 
 		self.edge_weight = self.substrate_graph.getDoubleProperty('edge_weight')
-		if self.dataSet['Weighting scheme'] == 'Giatsidis':
+		if self.weighting_scheme == 'Giatsidis':
 			self.weight_function = self.Giatsidis_weight_function
-		elif self.dataSet['Weighting scheme'] == 'Clique':
+		elif self.weighting_scheme == 'Clique':
 			self.weight_function = self.clique_weight_function
 		else: # self.dataSet['Weighting scheme'] == 'Uniform 1.0'
 			self.weight_function = self.uniform_weight
 
 		self.neighbor_sets()
 		self.project()
-		if self.dataSet['Build k-cores']:
-			self.compute_cores()
 		return True
 
-# The line below does the magic to register the plugin to the plugin database
-# and updates the GUI to make it accessible through the menus.
-tulipplugins.registerPluginOfGroup("OneModeProjection", "One-Mode Projection", "Guy Melancon", "24/05/2016", "", "1.0", "Two_mode_Networks")
+
+@printit
+def main(graph):
+	et = graph.getStringProperty('node_type')
+	omp = OneModeProjection(graph, weighting_scheme='Clique', entity_type=et, substrates_name='author')
+	omp.run()
