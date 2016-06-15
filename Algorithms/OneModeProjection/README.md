@@ -12,9 +12,9 @@ with different possible weighting schemes:
 	Evaluating Cooperation in Communities with the k-Core Structure.
 	Advances in Social Networks Analysis and Mining (ASONAM), 87-93.
 
-   where each type B node u contribute each projected edge a weight of 1/deg(u)
+   where each type B node u contributes each projected edge a weight of 1/deg(u)
 
-*   clique, a variation on Giatsidis where each type B node u contribute each projected edge a weight of 1 / [(deg(u)*(deg(u)-1)]/2
+*   clique, a variation on Giatsidis where each type B node u contributes each projected edge a weight of 1 / [(deg(u)*(deg(u)-1)]/2
 
 
 Starts from a two-mode network, project onto a one-mode network. Entities on which projection is performed must be specified as a string parameter. An existing node type string property is assumed (must be specified as part of the plugin parameters).
