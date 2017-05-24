@@ -1,20 +1,16 @@
-# One Mode Projection
-Computes a projection of a two mode network onto a one mode network (selecting entities of a given type).
+# Simmelian backbone
 
-Implements the projection of two-mode networks (type A and B nodes) onto one-mode networks (type A nodes),
-with different possible weighting schemes:
+Computes the backbone subgraph of a simple non-directed graph following Bobo Nick's algorithm
 
-*   uniform weights equal to 1 for all edges (same as assigning no weight ...)
+  * Nick, B., C. Lee, et al. (2013). Simmelian Backbones: Amplifying Hidden Homophily in Facebook Networks.
+    Advances in Social Network Analysis and Mining (ASONAM).
 
-*   Giatsidis, borrowed from:
+  * Uses an optional argument (name of a double property) that stores edge strength.
+  * Edge strength is used to sort edges (from highest strength -- strongest edges first -- down to weakest edges). Edge strength is either based on a user-defined property, or it is computed based on number of common neighbors of incident nodes, as suggested by Nick.
+    * A first parameter then indicates how many edges will be considered (when computing edge redundancy), thus putting the focus on the k strongest edges.
+  * Implements the parametric and non-parametric versions of edge redundancy (see paper for details).
+    * Parametric version requires a fixed number of common neighbors between incident nodes of an edge -- for the edge to qualify as being part of the backbone.
+    * Non-parametric version goes through strongest edges, considering the strongest, then the 2 strongest, up to all k strongest edges each time computing a Jaccard measure, thus ending with a sequences of values j1, j2, ..., jk. The non -parametric redundance measure is then max(j1, ..., jk) 
 
-	Giatsidis, C., D. M. Thilikos, et al. (2011)
-	Evaluating Cooperation in Communities with the k-Core Structure.
-	Advances in Social Networks Analysis and Mining (ASONAM), 87-93.
+  * The selected redundancy value is thus specified either as an integer (parametric) or real x in [0, 1] value (no parametric). The plugin thus needs to distinguish these two cases.
 
-   where each type B node u contributes each projected edge a weight of 1/deg(u)
-
-*   clique, a variation on Giatsidis where each type B node u contributes each projected edge a weight of 1 / [(deg(u)*(deg(u)-1)]/2
-
-
-Starts from a two-mode network, project onto a one-mode network. Entities on which projection is performed must be specified as a string parameter. An existing node type string property is assumed (must be specified as part of the plugin parameters).
