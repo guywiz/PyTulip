@@ -6,6 +6,6 @@ Computes an embedding of a graph onto a fractal space filling curve. These layou
 
 In this setting, only the graph's nodes and attributes are used. Edges are simply ignored. That being said, these layouts would typically be used on multi-dimensional data loaded into Tulip as graphs where nodes hold attributes and without any edge.
 
-The code is organized into a higher level class implemting the generic routine of mapping nodes onto the curve.
+The code is organized into a higher level class implementing the generic routine of mapping nodes onto the curve.
 
 The curve itself is specified in a subclass as a L-system. The total order used to map nodes onto the curve is given as a parameter to the class. In case the order follows from a sophisticated algorithm, it should be computed priori to instanciting the class and stored into a node property (integer, double or string).
