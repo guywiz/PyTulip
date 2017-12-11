@@ -2,13 +2,10 @@ from tulip import *
 import tulipplugins
 
 def printit(f):
-
     def printed(*args, **kw):
-
         result = f(*args, **kw)
         #print 'Executed method: %s ' % (f.__name__)
         return result
-
     return printed
 
 class OneModeProjection(object):
@@ -62,12 +59,15 @@ class OneModeProjection(object):
 				for i, si in enumerate(substrates):
 					for j, sj in enumerate(substrates):
 						if i < j:
-							e = self.substrate_graph.existEdge(si, sj, False)
-							if not e.isValid():
-								e = self.substrate_graph.addEdge(si, sj)
-							self.edge_weight[e] += c_weight
-			except ZeroDivisionError: # happens when c has degree 1, in which case there are no inferred edges
-				pass
+							try:
+								e = self.substrate_graph.existEdge(si, sj, False)
+								if not e.isValid():
+									e = self.substrate_graph.addEdge(si, sj)
+								self.edge_weight[e] += c_weight
+							except ZeroDivisionError: # happens when c has degree 1, in which case there are no inferred edges
+								pass
+			except Exception:
+				print(self.graph['viewLabel'][si], self.graph['viewLabel'][sj])
 
 	@printit
 	def Giatsidis_weight_function(self, catalyst):
@@ -129,6 +129,6 @@ class OneModeProjection(object):
 
 @printit
 def main(graph):
-	et = graph.getStringProperty('node_type')
-	omp = OneModeProjection(graph, weighting_scheme='Clique', entity_type=et, substrates_name='author')
+	et = graph.getStringProperty('Event Type')
+	omp = OneModeProjection(graph, weighting_scheme='Uniform 1.0 weight', entity_type=et, substrates_name='Personne')
 	omp.run()
