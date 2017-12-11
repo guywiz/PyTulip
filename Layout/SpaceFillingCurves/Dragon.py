@@ -5,7 +5,7 @@ from SpaceFilling import *
 
 class Dragon(SpaceFilling):
     '''
-    embeds nodes in a graph along a Hilbert curve
+    embeds nodes in a graph along a Dragon curve
     '''
     def __init__(self, graph):
         super(Dragon, self).__init__(graph)
