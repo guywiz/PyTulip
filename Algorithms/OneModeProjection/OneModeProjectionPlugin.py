@@ -17,10 +17,6 @@ class OneModeProjection(tlp.Algorithm):
 	be specified as part of the plugin parameters).
 	'''
 
-	def neighbor_sets(self):
-		for s in self.substrates:
-			self.catalyst_map[s] = frozenset([catalyst for catalyst in self.two_mode_graph.getInOutNodes(s)])
-
 	def project(self):
 		catalysts = [n for n in self.two_mode_graph.getNodes() if self.dataSet["Entity type"][n] != self.dataSet["Substrates (projected entities)"]]
 		for c in catalysts:
@@ -36,6 +32,8 @@ class OneModeProjection(tlp.Algorithm):
 							self.edge_weight[e] += c_weight
 			except ZeroDivisionError: # happens when c has degree 1, in which case there are no inferred edges
 				pass
+			except Exception:
+				print(self.graph['viewLabel'][si], self.graph['viewLabel'][si])
 
 	def Giatsidis_weight_function(self, catalyst):
 		return 1.0 / self.graph.deg(catalyst)
@@ -67,8 +65,6 @@ class OneModeProjection(tlp.Algorithm):
 				"Weight computation rule (Giatsidis=catalyst degree / Clique=induced clique size)",\
 				"Giatsidis;Clique;Uniform 1.0 weight")
 		self.addBooleanParameter("Build k-cores", "Builds core subgraphs", "False")
-
-		self.catalyst_map = {}
 
 	def check(self):
 		# This method is called before applying the algorithm on the input graph.
@@ -109,7 +105,6 @@ class OneModeProjection(tlp.Algorithm):
 		else: # self.dataSet['Weighting scheme'] == 'Uniform 1.0'
 			self.weight_function = self.uniform_weight
 
-		self.neighbor_sets()
 		self.project()
 		if self.dataSet['Build k-cores']:
 			self.compute_cores()
