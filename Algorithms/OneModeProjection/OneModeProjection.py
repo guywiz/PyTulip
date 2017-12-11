@@ -6,7 +6,7 @@ def printit(f):
     def printed(*args, **kw):
 
         result = f(*args, **kw)
-        print 'Executed method: %s ' % (f.__name__)
+        #print 'Executed method: %s ' % (f.__name__)
         return result
 
     return printed
