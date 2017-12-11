@@ -50,11 +50,11 @@ class SpaceFilling(object):
 	def iteration_order(self):
 		'''
 		computes the order up to which the sequence must be
-        rewritten in order to have enough points on the curve
-        to fit all nodes in the graph
- 
-        makes the assumption that the number of L, R symbols in all rules
-        is the same		'''
+		rewritten in order to have enough points on the curve
+		to fit all nodes in the graph
+
+		makes the assumption that the number of L, R symbols in all rules
+		is the same		'''
 		n = 0
 		p = 1
 		nb_LR = len(filter(lambda x: x=='L' or x=='R', self.rewrite('L')))
