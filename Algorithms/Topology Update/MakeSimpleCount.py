@@ -3,10 +3,8 @@ import tulipplugins
 
 class MakeSimpleCount(tlp.Algorithm):
 	'''
-	Simplifies a multiple edge graph into a simple edge graph,
-	preserving orientation,
-	and assinging edge a cardinality property counting the number
-	of edges underlying the singleD out edge.
+	Builds a new graph linking nodes to properties instanciated as nodes.
+	The new property-nodes are added to the supergraph.
 	'''
 
 	def __init__(self, context):
@@ -14,6 +12,8 @@ class MakeSimpleCount(tlp.Algorithm):
 		# you can add parameters to the plugin here through the following syntax
 		# self.add<Type>Parameter("<paramName>", "<paramDoc>", "<paramDefaultValue>")
 		# (see documentation of class tlp.WithParameter to see what types of parameters are supported)
+		self.addDoublePropertyParameter('(Optional) Edge weight property', 'Property holding weights on edge (input AND ouput)', '')
+		self.addStringCollectionParameter('Aggregation mode', 'Mode used to (eventually) deal with edge weights', 'Uniform unit weight;Weighted edges')
 
 	def check(self):
 		# This method is called before applying the algorithm on the input graph.
@@ -22,6 +22,8 @@ class MakeSimpleCount(tlp.Algorithm):
 
 		# Must return a tuple (boolean, string). First member indicates if the algorithm can be applied
 		# and the second one can be used to provide an error message
+		if self.dataSet['(Optional) Edge weight property'] == None and self.dataSet['Aggregation mode'] == 'Weighted edges':
+			return (False, 'Weighted edges aggreagtion mode requires to select an edge metric as input.')
 		return (True, "")
 
 	def run(self):
@@ -37,14 +39,18 @@ class MakeSimpleCount(tlp.Algorithm):
 
 		# The method must return a boolean indicating if the algorithm
 		# has been successfully applied on the input graph.
-		edge_weight = self.graph.getDoubleProperty('edge_weight')
+		# edge_weight = self.graph.getDoubleProperty('edge_weight')
+		edge_weight = self.dataSet['(Optional) Edge weight property']
 		to_delete = []
 		for n in self.graph.getNodes():
 			neighbors = [e for e in self.graph.getInEdges(n)]
 			source_set = set([self.graph.source(ee) for ee in neighbors])
 			for nn in source_set:
 				filtered_ee = filter(lambda x: self.graph.source(x).id == nn.id, neighbors)
-				nb_ee = len(filtered_ee)
+				if self.dataSet['Aggregation mode'] == 'Uniform unit weight':
+					nb_ee = len(filtered_ee)
+				else:
+					nb_ee = sum([edge_weight[e] for e in neighbors])
 				for ee in filtered_ee:
 					to_delete.append(ee)
 				eee = self.graph.addEdge(nn, n)
