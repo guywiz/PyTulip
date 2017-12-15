@@ -7,7 +7,7 @@ are aggregated to form a sinlge edge. The plug allows counting the number of edg
 aggregated, thee values begin stored in a metric provided as parameter.
 
 The same metric can also hold edge weights prior to edge aggregation. Edges in the resulting graph
-then hold a weight correspong to the sum of weights of the aggregated edges.
+then hold a weight corresponging to the sum of weights of the aggregated edges.
 
 The author wishes to thank Quentin Rossy (ESC -- UNIL, Lausanne, CH) for suggesting the design of this topology update plugin.
 
