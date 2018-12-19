@@ -3,8 +3,8 @@
 ## Make Simple Count
 
 This plugin "simplifies" the topology of the given graph: multiple edges between any two nodes
-are aggregated to form a sinlge edge. The plug allows counting the number of edges that were
-aggregated, thee values begin stored in a metric provided as parameter.
+are aggregated to form a single edge. The plugin allows counting the number of edges that were
+aggregated, the values being stored in a metric provided as parameter.
 
 The same metric can also hold edge weights prior to edge aggregation. Edges in the resulting graph
 then hold a weight corresponging to the sum of weights of the aggregated edges.
