@@ -129,17 +129,17 @@ class SecondOrderCentrality(RandomWalk):
             self.activeNode = selectedNeighbor
 
 def main(graph):
-    print 'Processing graph ' + graph.getName()
+    print('Processing graph ' + graph.getName())
     soc = SecondOrderCentrality(graph)
     print('Walking', 25*graph.numberOfEdges())
     soc.randomWalk(25*graph.numberOfEdges())
-    property = graph.getDoubleProperty('second order centrality')
+    property = graph.getDoubleProperty('+centrality')
     print('Computing second order centrality')
     for n in graph.getNodes():
         V = graph['tickVector'][n]
         L = V[0:len(V)-1]
         LL = V[1:len(V)]
-        deltas = map(lambda x: x[1]-x[0], zip(L, LL))
-        mean = sum(deltas)/len(deltas)
-        stddev = sqrt(sum(map(lambda x: (x-mean)**2, deltas)) / len(deltas))
+        N = len(V)-1
+        mean = sum(map(lambda x: x[1]-x[0], zip(L, LL)))/N
+        stddev = sqrt(sum(map(lambda x: (x-mean)**2, map(lambda x: x[1]-x[0], zip(L, LL)))) / N)
         property[n] = stddev
