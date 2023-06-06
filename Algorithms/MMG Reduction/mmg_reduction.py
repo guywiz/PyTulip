@@ -258,18 +258,6 @@ class MMG_reduction(object):
 				return e
 		return None
 
-	def test_histories(self):
-		# we assume an edge has been selected in the social network
-		for e in self.result_graph.getEdges():
-			self.original_multivariate_graph['viewSelection'].setAllNodeValue(False)
-			self.original_multivariate_graph['viewSelection'].setAllEdgeValue(False)
-			self.original_multivariate_graph['viewSelection'][e] = True
-			history_edge_ids = self.history[e].split(';')
-			for id in history_edge_ids:
-				ee = self.find_edge(id)
-				self.original_multivariate_graph['viewSelection'][ee] = True
-			sub = self.original_multivariate_graph.inducedSubGraph(self.original_multivariate_graph['viewSelection'])
-
 	def run_algorithm(self):
 		self._prune_()
 		self._merge_multiple_edges_()
