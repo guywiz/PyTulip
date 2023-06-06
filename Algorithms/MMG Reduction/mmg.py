@@ -50,7 +50,7 @@ class MMG(object):
 		else:
 			raise FileNotFoundError(f'Could not find file {filename}')
 
-	def parse(self):
+	def parse_and_reduce(self):
 		parser = MMG_parser(self.node_file, self.edge_file)
 		G = parser.get_multivariate_multigraph()
 		print(f'Number of nodes {G.numberOfNodes()} - Number of edges {G.numberOfEdges()}')
@@ -64,6 +64,6 @@ class MMG(object):
 			
 if __name__ == "__main__":
 	mmg = MMG()
-	mmg.parse()
+	mmg.parse_and_reduce()
 
 
