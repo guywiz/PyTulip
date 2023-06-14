@@ -30,13 +30,15 @@ The scripts currently support data stored in two distinct csv (_semi-colon separ
 
 Nodes:
 
-* must have a unique identifier under a column name `id`;
+* must have a unique identifier under a column named `id`;
+ * an `id` can take as value an integer or a string;
 * must have a `type`, or put differently the name of a category to which the node belong;
 * can optionally have a `label` and `icon` that can be used when displaying the graph. The icon value must be an icon name part of the [awesome font family](https://fontawesome.com/).
 
 Edges:
 
 * must have a unique identifier under a column named `id`;
+ * an `id` can take as value an integer or a string;
 * must specify (in two separate columns) the `source` and `target` nodes they connect; these values must refer to properly defined node identifiers (part of the node file);
 * must specify a `weight`, that is a numerical value often normalized to (0, 1];
 * may specify an edge `type`, also a numerical value often normalized to (0, 1]; 
