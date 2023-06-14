@@ -1,15 +1,25 @@
 from tulip import *
 from dfs import *
 import time
+from mmg_ring import *
 
 class MMG_reduction(object):
 	"""
-	This class implements a reduction algorithm first published in:
+	This class implements a reduction algorithm starting from a multivariate multigraph
+	encapsulating data from a criminal investigation, projecting it onto a social network.
+	
+	This code is companion to a paper submitted to the Journal of Quantitative Criminology.
+	An early version of the algorithm was presented at the EGC French Annual Conference in 2023.
 	
 	Bruno Pinaud, Maud Bénichou, Guy Melançon.
 	Extraction d'un réseau social criminel par transformation d'un graphe d'enquête multivarié.
 	Conférence Extraction et Gestion des Connaissances (EGC) 2023, Revue RNTI-039. pp.151-162.
 	Référence HAL hal-03929950.
+
+	* Erratum. The EGC paper contains a slight mistake concerning the arithmetic operators that can be used
+	to compute weights on the social network. The proper requirement is to make sure the operators do
+	form a commutative ring over the reals. The mistake has been properly addressed in
+	the Journal of Quantitative Criminology version (submitted).
 
 	The algorithm computes a social network out of a multivariate multigraph, by iteratively
 	merging multiple edges and contracting simple paths connecting entitites of a given type.
@@ -18,29 +28,28 @@ class MMG_reduction(object):
 
 	This work was motivated by the need to consider a social network of actors
 	starting from a series of observation collected along a criminal investigations.
-	Links in the multivariate graph typically connect people to phones or app logins, to vehicle
-	and physical location.
+	Links in the multivariate graph typically connect people to phones or app logins, to vehicles
+	and physical locations.
 
-	This piece of code is written as to make it usable within the Graph Visualization Framework Tulip,
-	alongisde the graph. The historicize method then helps mapping edges of the social network back
-	into the multivariate graph.
+	Observe that this code also applies to a variety of situations, not only those resulting
+	from criminal investigation data. Firthermore, one could use the algorithm to compute
+	a social of network not involving actors but any other entity type. For instance, the algorithm
+	may be used to compute a social network of vehicles, assuming this is of interest as ot may reveal
+	some pattern in the activity of the network, or unveal how a third party took part in these activities.
 	"""
 	def __init__(self, graph):
 		super(MMG_reduction, self).__init__()
 		self.graph = graph
 		self.item_id = self.graph.getStringProperty('id')
 		self.history = self.graph.getStringProperty('history')
+		self.compute_history = self.graph.getStringProperty('compute_history')
 		self._initial_history_()
-
-	def setup(self):
-		self.result_graph = graph.getSubGraph('Projected graph PERSONNE')
-		self.original_multivariate_graph = graph.getSubGraph('Original multivariate graph')
+		self.ring = MMG_ring()
 
 	def _initial_history_(self):
-		for n in self.graph.getNodes():
-			self.history[n] = self.item_id[n]
 		for e in self.graph.getEdges():
 			self.history[e] = self.item_id[e]
+			self.compute_history[e] = self.item_id[e]
 
 	def set_projected_type(self, property_name = 'type', projected_value = 'PERSONNE'):
 		'''
@@ -96,22 +105,26 @@ class MMG_reduction(object):
 		skip = []
 		for e in parallel_edges:
 			history = []
+			compute_history = []
 			if self.item_id[e] not in skip:
 				source = self.result_graph.source(e)
 				target = self.result_graph.target(e)
 				s_edges = self.result_graph.getInOutEdges(source)
 				t_edges = self.result_graph.getInOutEdges(target)
 				to_merge_edges = set(s_edges).intersection(set(t_edges))
-				w = self.merge_operator([self.weight[e] for e in to_merge_edges])
+				w = self.ring.merge_operator([self.weight[e] for e in to_merge_edges])
 				merged_edge = self.result_graph.addEdge(source, target)
 				#nb_added_edges += 1
 				self.weight[merged_edge] = w
 				for ee in to_merge_edges:
 					skip.append(self.item_id[ee])
 					history.append(self.history[ee])
+					compute_history.append(self.compute_history[ee])
 					self.result_graph.delEdge(ee)
 				merge_history = f"{';'.join(history)}"
 				self.history[merged_edge] = merge_history
+				merge_compute_history = f"{';'.join(compute_history)}"
+				self.compute_history[merged_edge] = f"M({merge_compute_history})"
 		end_time = time.time()
 		print(f'MERGING TIME {(end_time - start_time)}')
 
@@ -124,18 +137,22 @@ class MMG_reduction(object):
 			neighbors.append(n)
 		weights = []
 		history = []
-		for e in self.result_graph.getInOutEdges(node):
+		compute_history = []
+		for e in self.result_graph.getInOutEdges(node):				
 			weights.append(self.weight[e])
 			history.append(self.history[e])
+			compute_history.append(self.compute_history[e])
 			self.result_graph.delEdge(e)
 		e = self.result_graph.addEdge(neighbors[0], neighbors[1])
-		self.weight[e] = self.contract_operator(weights)
+		self.weight[e] = self.ring.contract_operator(weights)
 		contract_history = f"{';'.join(history)}"
+		contract_compute_history = f"C({';'.join(compute_history)})"
 		self.history[e] = contract_history
+		self.compute_history[e] = contract_compute_history
 
 	def _contract_deg_2_(self):
 		'''
-		At this point, resulting graph only contains non person nodes of degree >= 2
+		At this point, non person nodes in resulting graph necessarily have degree >= 2
 		This method takes care of nodes of degree exactly equal to 2
 		'''
 		#print(f'BEFORE CONTRACTING (DEG 2), NB NODES: {self.result_graph.numberOfNodes()}, NB EDGES: {self.result_graph.numberOfEdges()}')
@@ -155,7 +172,11 @@ class MMG_reduction(object):
 		end_time = time.time()
 		print(f'CONTRACT DEG 2 TIME {(end_time - start_time)}')
 		
-	def contract_simple_paths(self):
+	def _are_neighbours_(self, anode, bnode):
+		e = self.result_graph.existEdge(anode, bnode, directed=False)
+		return e.isValid()
+
+	def _contract_simple_paths_(self):
 		'''
 		At this point, resulting graph only contains non person nodes of degree > 2.
 		We thus fall onto the phase where we process simple paths.
@@ -173,10 +194,10 @@ class MMG_reduction(object):
 			for j, end_node in enumerate(projected_nodes):
 				if j > i and connected_components[start_node] == connected_components[end_node]:
 					simpath.reset(start_node, end_node)
-					paths = sorted(simpath.getSimplePaths(), key = lambda x: self.simple_path_weight(x))
+					paths = sorted(simpath.getSimplePaths(), key = lambda x: self._simple_path_weight_(x))
 					collected_paths += paths
 					for p in self._sort_out_paths_(paths):
-						to_create_edges.append([p, self.simple_path_weight(p)])
+						to_create_edges.append([p, self._simple_path_weight_(p)])
 		self._create_edges_(to_create_edges)
 		self._clean_up_paths_(collected_paths)
 		end_time = time.time()
@@ -212,9 +233,15 @@ class MMG_reduction(object):
 		source = path[0]
 		target = path[-1]
 		history = [self.history[path[i]] for i in range(1, len(path), 2)]
+		compute_history = [self.compute_history[path[i]] for i in range(1, len(path), 2)]
 		e = self.result_graph.addEdge(source, target)
 		self.weight[e] = weight
 		self.history[e] = f"{';'.join(history)}"
+
+		if len(compute_history) == 1:
+			self.compute_history[e] = compute_history[0]
+		else:
+			self.compute_history[e] = f"C({';'.join(compute_history)})"
 
 	def _clean_up_paths_(self, path_list):
 		for p in path_list:
@@ -224,39 +251,8 @@ class MMG_reduction(object):
 				except Exception:
 					continue
 
-	def simple_path_weight(self, path):
-		return self.contract_operator([self.weight[path[i]] for i in range(1, len(path), 2)])
-
-	def contract_operator(self, *weights):
-		return sum(*weights)
-
-	def merge_operator(self, *weights):
-		return max(*weights)
-	
-	def historicize(self):
-		# we assume an edge has been selected in the social network
-		selected_edge = None
-		for e in self.result_graph.getEdges():
-			if self.result_graph['viewSelection'][e]:
-				selected_edge = e
-		print(f'HISTORIZATION EDGE {selected_edge}')
-		self.original_multivariate_graph['viewSelection'].setAllNodeValue(False)
-		self.original_multivariate_graph['viewSelection'].setAllEdgeValue(False)
-		history_edge_ids = self.history[selected_edge].split(';')
-		print(f'HISTORY {history_edge_ids}')
-		for id in history_edge_ids:
-			e = self.find_edge(id)
-			print(f'\t {id}')
-			self.original_multivariate_graph['viewSelection'][e] = True
-		sub = self.original_multivariate_graph.inducedSubGraph(self.original_multivariate_graph['viewSelection'])
-		sub.setName(f'Expand edge {history_edge_ids}')
-		
-	def find_edge(self, edge_id):
-		edge_ids = self.original_multivariate_graph.getStringProperty('id')
-		for e in self.original_multivariate_graph.getEdges():
-			if edge_ids[e] == edge_id:
-				return e
-		return None
+	def _simple_path_weight_(self, path):
+		return self.ring.contract_operator([self.weight[path[i]] for i in range(1, len(path), 2)])
 
 	def run_algorithm(self):
 		self._prune_()
@@ -264,27 +260,6 @@ class MMG_reduction(object):
 		self._prune_()
 		self._contract_deg_2_()
 		self._prune_()
-		self.contract_simple_paths()
+		self._contract_simple_paths_()
 		self._merge_multiple_edges_()
 		self._prune_()
-		
-	def save_graph(self, filename):
-		tlp.saveGraph(self.graph, filename)
-
-def main(graph):
-	AB = MMG_reduction(graph)
-	AB.set_projected_type()
-
-	AB._prune_()
-	AB._merge_multiple_edges_()
-	AB._prune_()
-	AB._contract_deg_2_()
-	AB._prune_()
-	AB.contract_simple_paths()
-	AB._merge_multiple_edges_()
-	AB._prune_()
-
-	'''
-	AB.setup()
-	AB.historicize()
-	'''

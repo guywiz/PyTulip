@@ -19,13 +19,9 @@ class MMG_parser(object):
 		self.icons = self.graph.getStringProperty('viewIcon')
 		self.weights = self.graph.getDoubleProperty('weight')
 
-	def create_node(self, node_info):
+	def _create_node_(self, node_info):
 		node = self.graph.addNode()
-		try:
-			self.ids[node] = node_info['id']
-		except KeyError:
-			print(node_info)
-			return
+		self.ids[node] = node_info['id']
 		self.types[node] = node_info['type']
 		self.labels[node] = node_info['label']
 		self.shapes[node] = tlp.NodeShape.Icon
@@ -33,9 +29,9 @@ class MMG_parser(object):
 		self.ids[node] = node_info['id']
 		return node
 
-	def create_edge(self, edge_info):
-		source = self.get_node(edge_info['source'])
-		target = self.get_node(edge_info['target'])
+	def _create_edge_(self, edge_info):
+		source = self._get_node_(edge_info['source'])
+		target = self._get_node_(edge_info['target'])
 		edge = self.graph.addEdge(source, target)
 		self.ids[edge] = edge_info['id']
 		self.types[edge] = edge_info['type']
@@ -46,36 +42,34 @@ class MMG_parser(object):
 		self.weights[edge] = float(edge_info['weight'])
 		return edge
 
-	def get_node(self, node_id):
+	def _get_node_(self, node_id):
 		try:
 			i = self.id_list.index(node_id)
 			return self.node_list[i]
 		except ValueError:
 			return None
 
-	def parse_nodes(self):
+	def _parse_nodes_(self):
 		'''
 		Parses a ;-separated csv file describing nodes of the multivariate multigraph.
 		'''
 		with open(self.node_file, 'r') as fnode:
 			node_reader = csv.DictReader(fnode, delimiter=';')
 			for row in node_reader:
-				self.create_node(row)
+				self._create_node_(row)
 		self.id_list = [self.ids[n] for n in self.graph.getNodes()]
 		self.node_list = [n for n in self.graph.getNodes()]
 
-	def parse_edges(self):
+	def _parse_edges_(self):
 		'''
 		Parses a ;-separated csv file describing edges of the multivariate multigraph.
 		'''
 		with open(self.edge_file, 'r') as fedge:
 			node_reader = csv.DictReader(fedge, delimiter=';')
 			for row in node_reader:
-				self.create_edge(row)
+				self._create_edge_(row)
 
 	def get_multivariate_multigraph(self):
-		self.parse_nodes()
-		self.parse_edges()
-		sub = self.graph.addCloneSubGraph()
-		sub.setName('Original multivariate multigraph')
+		self._parse_nodes_()
+		self._parse_edges_()
 		return self.graph
