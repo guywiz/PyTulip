@@ -11,7 +11,7 @@ The script can be used from the command line, handling data files and directly o
 
 The scripts currently support data stored in two distinct csv (_semi-colon separated_) files. A first file stores _nodes_ while a second files stores _edges_ of a multivariate multigraph (MMG).
 
-![](./nodes_edges_csv.png)
+![](./misc/nodes_edges_csv.png)
 
 Nodes:
 
@@ -60,7 +60,7 @@ For example, the script can be test-run on the provided examples files using the
 
 The projected type can in this case be omitted since it equates the default type `PERSON`. The resulting multivariate graph contains 28 nodes, among which 13 are of type `PERSON`, and 35 edges. The resulting social network contains 13 nodes (persons) and 29 edges.
 
-![](./graphs_algorithm.png)
+![](./misc/graphs_algorithm.png)
 
 ### Using the `python`modules
 
