@@ -7,6 +7,21 @@ The scripts heavily rely on [Tulip](https://tulip.labri.fr/), a `python` library
 
 The script can be used from the command line, handling data files and directly outputting the social network in various formats.
 
+### Reference
+
+This code is companion to a paper submitted to the _Journal of Quantitative Criminology_. An early version of the algorithm was presented at the _EGC French Annual Conference_ in 2023.
+	
+Bruno Pinaud, Maud Bénichou, Guy Melançon.
+Extraction d'un réseau social criminel par transformation d'un graphe d'enquête multivarié.
+Conférence Extraction et Gestion des Connaissances (EGC) 2023, Revue RNTI-039. pp.151-162.
+Référence HAL hal-03929950.
+
+* _Erratum_. The EGC paper contains a slight mistake concerning the arithmetic operators that can be used
+to compute weights on the social network. The proper requirement is to make sure the operators do
+form a commutative ring over the reals. The mistake has been properly addressed in
+the _Journal of Quantitative Criminology_ version (submitted).
+
+
 ### Data format
 
 The scripts currently support data stored in two distinct csv (_semi-colon separated_) files. A first file stores _nodes_ while a second files stores _edges_ of a multivariate multigraph (MMG).
