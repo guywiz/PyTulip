@@ -8,6 +8,8 @@ class MMG(object):
 	"""
 	This class encapsulates the overall phases needed to process
 	data stored in separate csv files.
+
+	Would eventually need to be made robust against missing values, or types, etc.
 	"""
 	def __init__(self):
 		super(MMG, self).__init__()
@@ -22,6 +24,7 @@ class MMG(object):
 		self.output_file = args.output
 		if args.projected_type:
 			self.projected_type = args.projected_type
+			print(f'PROJECTED TYPE {self.projected_type}')
 		else:
 			self.projected_type = 'PERSON'
 		try:
@@ -56,7 +59,7 @@ class MMG(object):
 		print(f'Number of nodes {G.numberOfNodes()} - Number of edges {G.numberOfEdges()}')
 
 		reductor = MMG_reduction(G)
-		reductor.set_projected_type(self.projected_type)
+		reductor.set_projected_type(projected_type=self.projected_type)
 		reductor.set_weight_property()
 
 		reductor.run_algorithm()

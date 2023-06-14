@@ -51,7 +51,7 @@ class MMG_reduction(object):
 			self.history[e] = self.item_id[e]
 			self.compute_history[e] = self.item_id[e]
 
-	def set_projected_type(self, property_name = 'type', projected_value = 'PERSONNE'):
+	def set_projected_type(self, projected_type = 'PERSONNE'):
 		'''
 		Types of nodes and edges are stored in a string property
 		whose ame can be passed as a parameter. The method also require
@@ -61,11 +61,11 @@ class MMG_reduction(object):
 		self.original_multivariate_graph.setName('Original multivariate graph')
 
 		self.result_graph = self.original_multivariate_graph.addCloneSubGraph(
-			f'Projected graph {projected_value}',
+			f'Projected graph {projected_type}',
 			addSibling=True,
 			addSiblingProperties=True)
-		self.item_type = self.result_graph.getStringProperty(property_name)
-		self.projected_type = projected_value
+		self.item_type = self.result_graph.getStringProperty('type')
+		self.projected_type = projected_type
 
 	def set_weight_property(self, weight_property_name = 'weight'):
 		'''
@@ -253,6 +253,9 @@ class MMG_reduction(object):
 
 	def _simple_path_weight_(self, path):
 		return self.ring.contract_operator([self.weight[path[i]] for i in range(1, len(path), 2)])
+
+	def save_graph(self, filename):
+		tlp.saveGraph(self.graph, filename)
 
 	def run_algorithm(self):
 		self._prune_()
