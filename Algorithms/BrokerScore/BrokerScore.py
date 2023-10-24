@@ -9,12 +9,43 @@ import leidenalg
 # local package
 from Dijkstra import *
 
+"""
+This script offers an alternative to Paquet-CLouston an Bouchard `python` package
+computing their broker score defined on node sof a network. Please refer to their paper
+
+	Paquet-Clouston, M., & Bouchard, M. (2023).
+	A Robust Measure to Uncover Community Brokerage in Illicit Networks.
+	_Journal of Quantitative Criminology_, 39(3), 705-733.
+
+Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product.
+
+The main class `BrokerScore` implements all necessary methods, partly relying on the `Dijkstra` class
+to run a dfs and compute a community cohesion score. In order to stick with Paquet-Clouston and Bouchard definition
+of cohesion, we invoke networkX average path length routine which requires
+to convert from Tulip into the iGraph format.
+
+A code snippet at the bottom of the BrokerScore class file alows the use of the code
+from within the Tulip desktop applicaiton. Running the script should be easy. Make sure
+the local hierarchy is clean and does not contain any subgraph, as the script does produce
+a series of subgraph and makes use of unrobust naming conventions.
+"""
 
 class BrokerScore:
-    def __init__(self, graph, community_property_name):
+    def __init__(
+        self, graph, community_property_name, score_property_name="broker_score"
+    ):
+        print('-----')
+        print(graph)
+        print(community_property_name)
+        print(score_property_name)
+        print('-----')
         self.graph = graph
         self.community_property_name = community_property_name
+        self.score_property_name = score_property_name
+        # check whether the graph already stores a property for node communities
+		# if not, compute communities
         communities_exist = self.graph.existProperty(self.community_property_name)
+        print(f'Communities exist: {communities_exist}')
         self.community = self.graph.getLocalDoubleProperty(community_property_name)
         if not communities_exist:
             self.run_community_finding_algorithm()
@@ -23,15 +54,32 @@ class BrokerScore:
             "neighbor_communities"
         )
         # instantiate communities as subgraphs
-
+		# check whether communities have already been instanciated as subgraphs
+		# no fancy stuff here, if there are subgraphs assume everything works fine
+		# no name checking or number of subgraphs etc.
+		# its all or nothing
+        test_community = len(list(self.graph.getSubGraphs())) > 0
+        if not test_community:
+            print('Need to build communities as subgraphs')
+            self.build_communities()
+        else:
+            print('Communities already instanciated as subgraphs')
+        self.collect_community_names()
+        
     def _standardize_community_names_(self):
         # normalize community names (subgraphs)
         # we assume subgraphs have been named by the Equal value plugin
         # (using its input metric name)
         # !!! and that communities are labelled using consecutive integers starting from 0 !!!
+        print()
+        print('_standardize_community_names_', [sub.getName() for sub in self.graph.getSubGraphs()])
         for sub in self.graph.getSubGraphs():
-            if sub.getName() != "Original graph":
-                sub.setName(f'community_{sub.getName().split(":")[1].strip()}')
+            # for what its worth, when using EqualValue, subgraphs are named using 
+            # the property name and metric (integer) values, using colon ":"
+            if not ':' in sub.getName():
+                return
+            else:
+                sub.setName(f'{self.community_property_name}_{sub.getName().split(":")[1].strip()}')
 
     def build_communities(self):
         params = tlp.getDefaultPluginParameters("Equal Value", self.graph)
@@ -59,6 +107,8 @@ class BrokerScore:
                 self.community[n] = membership[gc.node_to_index[n]]
 
     def collect_community_names(self):
+        print()
+        print('collect_community_names', [sub.getName() for sub in self.graph.getSubGraphs()])
         self.community_names = sorted(
             [sub.getName() for sub in self.graph.getSubGraphs()],
             key=lambda x: int(x.split("_")[1]),
@@ -203,13 +253,12 @@ class BrokerScore:
                 node_vector[i] = 1
         return node_vector
 
-    def node_brokerage_score(self, score_property_name="node_brokerage_score"):
-        print(f"SCORE USING PROP {score_property_name}")
+    def node_brokerage_score(self):
         self.compute_neighbor_communities()
         C = self.compute_community_vector()
         M = self.compute_community_matrix()
 
-        self.graph.getLocalDoubleProperty(score_property_name)
+        self.graph.getLocalDoubleProperty(self.score_property_name)
         for node in self.graph.getNodes():
             node_vector = np.zeros(self.nb_communities)
             node_vector[int(self.community[node])] = 1
@@ -217,42 +266,47 @@ class BrokerScore:
                 for i in self.neighbor_communities[node]:
                     node_vector[i] = 1
                 V = np.multiply(node_vector, C)
-                self.graph[score_property_name][node] = V.dot(M.transpose())[
+                self.graph[self.score_property_name][node] = V.dot(M.transpose())[
                     int(self.community[node])
                 ]
 
+    def compute_broker_network(self):
+        i = 0
+        current_graph = self.graph
+        community_property_name = f"community_{i}"
+        score_property_name = f"broker_score_{i}"
+        selection_property_name = f"is_broker_{i}"
+        # level 0 coincides with original graph
+        community_0 = current_graph.getLocalDoubleProperty(community_property_name)
+        community_0.copy(self.community)
+
+        while True:
+            bs = BrokerScore(
+                current_graph, community_property_name, score_property_name
+            )
+            bs.node_brokerage_score()
+            select = current_graph.getBooleanProperty(selection_property_name)
+            select.setAllNodeValue(False)
+            score = current_graph.getLocalDoubleProperty(score_property_name)
+            for n in current_graph.getNodes():
+                if score[n] > 0:
+                    select[n] = True
+            induced_subgraph = current_graph.inducedSubGraph(
+                select, name=selection_property_name
+            )
+            if induced_subgraph.numberOfNodes() == current_graph.numberOfNodes():
+                # all nodes in current_graph are brokers
+                current_graph.delSubGraph(induced_subgraph)
+                return
+            else:
+                i += 1
+                community_property_name = f"community_{i}"
+                score_property_name = f"broker_score_{i}"
+                selection_property_name = f"is_broker_{i}"
+                current_graph = induced_subgraph
+
 
 def main(graph):
-    BS = BrokerScore(graph, "community")
-    # BS.run_community_finding_algorithm()
-    BS.build_communities()
-    BS.collect_community_names()
-    BS.node_brokerage_score("broker_score")
-
-    hierarchy_depth = 6
-
-    i = 0
-    current_graph = graph
-    community_property_names = [f"community_{i}" for i in range(hierarchy_depth)]
-    score_property_names = [f"NBS_{i}" for i in range(8)]
-    selection_property_names = [f"is_broker_{i}" for i in range(hierarchy_depth)]
-
-    for i in range(0, hierarchy_depth):
-        bs = BrokerScore(current_graph, community_property_names[i])
-        if i == 0:
-            p = current_graph.getLocalDoubleProperty(community_property_names[i])
-            for n in current_graph.getNodes():
-                p[n] = current_graph["community"][n]
-        else:
-            bs.run_community_finding_algorithm()
-            bs.build_communities()
-        bs.collect_community_names()
-        bs.node_brokerage_score(score_property_name=score_property_names[i])
-
-        vs = current_graph.getLocalBooleanProperty(selection_property_names[i])
-        vs.setAllNodeValue(False)
-        score = current_graph.getLocalDoubleProperty(score_property_names[i])
-        for n in current_graph.getNodes():
-            if score[n] > 0:
-                vs[n] = True
-        current_graph = current_graph.inducedSubGraph(vs, name=f"Broker_net_{i}")
+    BS = BrokerScore(graph, "community", "broker_score")
+    BS.node_brokerage_score()
+    BS.compute_broker_network()
