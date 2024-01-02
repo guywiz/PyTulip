@@ -30,61 +30,78 @@ from within the Tulip desktop applicaiton. Running the script should be easy. Ma
 the local hierarchy is clean and does not contain any subgraph, as the script does produce
 a series of subgraph and makes use of unrobust naming conventions.
 """
-class iGraphConverter():
-	'''
-	Utility class to convert grpahs between formats,
-	baiscally Tulip and iGraph
-	(used by the iGrpah implementation of the Leiden algorithm)
-	'''
-	def __init__(self, tulip_graph):
-		super(iGraphConverter, self).__init__()
-		self.tulip_graph = tulip_graph
-		tulip_nodes = [n for n in self.tulip_graph.getNodes()]
-		tulip_edges = [e for e in self.tulip_graph.getEdges()]
-		self.node_to_index = {tulip_nodes[i]: i for i in range(self.tulip_graph.numberOfNodes())}
-		self.index_to_node = {i: tulip_nodes[i] for i in range(self.tulip_graph.numberOfNodes())}
-		self.edge_to_index = {e: self._edge_index_(e) for e in tulip_edges}
-		self.index_to_edge = {}
-		for tulip_edge, edge_index in self.edge_to_index.items():
-			self.index_to_edge[edge_index] = tulip_edge
 
-	def _edge_index_(self, tulip_edge):
-		s = self.tulip_graph.source(tulip_edge)
-		t = self.tulip_graph.target(tulip_edge)
-		i = self.node_to_index[s]
-		j = self.node_to_index[t]
-		return i * self.tulip_graph.numberOfNodes() + j
 
-	def to_igraph(self, exported_node_properties = [], exported_edge_properties = []):
-		nb_vertices = self.tulip_graph.numberOfNodes()
-		edges = [(self.node_to_index[self.tulip_graph.source(e)], self.node_to_index[self.tulip_graph.target(e)]) for e in self.tulip_graph.getEdges()]
-		iG = igraph.Graph(nb_vertices)
-		iG = igraph.Graph.as_directed(iG, 'random')
-		iG.add_edges(edges)
-		for p in exported_node_properties:
-			self.write_node_property(iG, p)
-		for p in exported_edge_properties:
-			self.write_edge_property(iG, p)
-		return iG
+class iGraphConverter:
+    """
+    Utility class to convert grpahs between formats,
+    baiscally Tulip and iGraph
+    (used by the iGrpah implementation of the Leiden algorithm)
+    """
 
-	def write_node_property(self, i_graph, property_name):
-		values = []
-		#for i in range(self.tulip_graph.numberOfNodes():
-		# tulip_node_from_index = self.index_to_node[i]
-		# property_value = self.tulip_graph[property_name]
-		i_graph.vs[property_name] = [self.tulip_graph[property_name][self.index_to_node[i]] for i in range(self.tulip_graph.numberOfNodes())]
+    def __init__(self, tulip_graph):
+        super(iGraphConverter, self).__init__()
+        self.tulip_graph = tulip_graph
+        tulip_nodes = [n for n in self.tulip_graph.getNodes()]
+        tulip_edges = [e for e in self.tulip_graph.getEdges()]
+        self.node_to_index = {
+            tulip_nodes[i]: i for i in range(self.tulip_graph.numberOfNodes())
+        }
+        self.index_to_node = {
+            i: tulip_nodes[i] for i in range(self.tulip_graph.numberOfNodes())
+        }
+        self.edge_to_index = {e: self._edge_index_(e) for e in tulip_edges}
+        self.index_to_edge = {}
+        for tulip_edge, edge_index in self.edge_to_index.items():
+            self.index_to_edge[edge_index] = tulip_edge
 
-	# edge in igraph, index of source and target in igraph, convert to unique integer
-	# use map integer -> edge in tulip graph
-	def write_edge_property(self, i_graph, property_name):
-		property_values = []
-		for e in i_graph.es:
-			i = e.source
-			j = e.target
-			edge_index = i * self.tulip_graph.numberOfNodes() + j
-			e_tulip = self.index_to_edge[edge_index]
-			property_values.append(self.tulip_graph[property_name][e_tulip])
-		i_graph.es[property_name] = property_values
+    def _edge_index_(self, tulip_edge):
+        s = self.tulip_graph.source(tulip_edge)
+        t = self.tulip_graph.target(tulip_edge)
+        i = self.node_to_index[s]
+        j = self.node_to_index[t]
+        return i * self.tulip_graph.numberOfNodes() + j
+
+    def to_igraph(self, exported_node_properties=[], exported_edge_properties=[]):
+        nb_vertices = self.tulip_graph.numberOfNodes()
+        edges = [
+            (
+                self.node_to_index[self.tulip_graph.source(e)],
+                self.node_to_index[self.tulip_graph.target(e)],
+            )
+            for e in self.tulip_graph.getEdges()
+        ]
+        iG = igraph.Graph(nb_vertices)
+        iG = igraph.Graph.as_directed(iG, "random")
+        iG.add_edges(edges)
+        for p in exported_node_properties:
+            self.write_node_property(iG, p)
+        for p in exported_edge_properties:
+            self.write_edge_property(iG, p)
+        return iG
+
+    def write_node_property(self, i_graph, property_name):
+        values = []
+        # for i in range(self.tulip_graph.numberOfNodes():
+        # tulip_node_from_index = self.index_to_node[i]
+        # property_value = self.tulip_graph[property_name]
+        i_graph.vs[property_name] = [
+            self.tulip_graph[property_name][self.index_to_node[i]]
+            for i in range(self.tulip_graph.numberOfNodes())
+        ]
+
+    # edge in igraph, index of source and target in igraph, convert to unique integer
+    # use map integer -> edge in tulip graph
+    def write_edge_property(self, i_graph, property_name):
+        property_values = []
+        for e in i_graph.es:
+            i = e.source
+            j = e.target
+            edge_index = i * self.tulip_graph.numberOfNodes() + j
+            e_tulip = self.index_to_edge[edge_index]
+            property_values.append(self.tulip_graph[property_name][e_tulip])
+        i_graph.es[property_name] = property_values
+
 
 class BrokerScore(tlp.DoubleAlgorithm):
     def __init__(self, context):
@@ -133,13 +150,16 @@ class BrokerScore(tlp.DoubleAlgorithm):
         # algorithm can be applied and the second one can be used to provide
         # an error message.
 
-		# check whether communities have already been instanciated as subgraphs
-		# no fancy stuff here, if there are subgraphs assume everything works fine
-		# no name checking or number of subgraphs etc.
-		# its all or nothing
+        # check whether communities have already been instanciated as subgraphs
+        # no fancy stuff here, if there are subgraphs assume everything works fine
+        # no name checking or number of subgraphs etc.
+        # its all or nothing
         test_community = len(list(self.graph.getSubGraphs())) > 0
         if test_community:
-            return (False, "Make sure communities have not been computed as subgraphs already (delete all subgraphs).")
+            return (
+                False,
+                "Make sure communities have not been computed as subgraphs already (delete all subgraphs).",
+            )
         return (True, "")
 
     def _standardize_community_names_(self):
@@ -148,13 +168,15 @@ class BrokerScore(tlp.DoubleAlgorithm):
         # (using its input metric name)
         # !!! and that communities are labelled using consecutive integers starting from 0 !!!
         for sub in self.graph.getSubGraphs():
-            # for what its worth, when using EqualValue, subgraphs are named using 
+            # for what its worth, when using EqualValue, subgraphs are named using
             # the property name and metric (integer) values, using colon ":"
-            if not ':' in sub.getName():
+            if not ":" in sub.getName():
                 return
             else:
                 community_property_name = self.community.getName()
-                sub.setName(f'{community_property_name}_{sub.getName().split(":")[1].strip()}')
+                sub.setName(
+                    f'{community_property_name}_{sub.getName().split(":")[1].strip()}'
+                )
 
     def build_communities(self):
         # first get rid fo any remaining subgraph structure
@@ -314,8 +336,13 @@ class BrokerScore(tlp.DoubleAlgorithm):
         return node_vector
 
     def number_of_brokers(self):
-        return sum([1 if self.graph[self.score_property_name][n] > 0 else 0 for n in self.graph.getNodes()])
-    
+        return sum(
+            [
+                1 if self.graph[self.score_property_name][n] > 0 else 0
+                for n in self.graph.getNodes()
+            ]
+        )
+
     def compute_broker_network(self):
         i = 0
         current_graph = self.graph
@@ -385,13 +412,13 @@ class BrokerScore(tlp.DoubleAlgorithm):
             self.compute_neighbor_communities()
 
             C = self.compute_community_vector()
-            print(f'Community vector\n {C}')
+            print(f"Community vector\n {C}")
             M = self.compute_community_matrix()
-            print(f'Community matrix\n {M}')
+            print(f"Community matrix\n {M}")
             for node in self.graph.getNodes():
                 if len(self.neighbor_communities[node]) > 0:
                     node_vector = self.compute_node_vector(node)
-                    print(f'Node {node.id} vector {node_vector}')
+                    print(f"Node {node.id} vector {node_vector}")
                     V = np.multiply(node_vector, C)
                     broker_score[node] += V.dot(M.transpose())[
                         int(self.community[node])
