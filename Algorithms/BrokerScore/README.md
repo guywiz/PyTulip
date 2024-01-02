@@ -24,4 +24,7 @@ def main(graph):
 ```
 Note that the BrokerScore class can be used to build a sub-network (induced subgraph) solely consisting of brokers. The construct can be iterated, as not all brokers act as broker iin the broker network. The iteration ultiately ends, giving rise to a hierarchyof sub-networks.
 
+## Dependencies
+The BrokerScore class depends on a set of libraries that should be installed using the accompanying `requirements.txt` file. Note that versions have not been tightfully checked and my depend on how these third party libraries evolve.
+
 
