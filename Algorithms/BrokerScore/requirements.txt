@@ -1,0 +1,6 @@
+igraph==0.10.8
+leidenalg==0.10.1
+networkx==3.2.1
+numpy
+pandas
+tulip-python==5.7.2

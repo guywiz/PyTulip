@@ -5,10 +5,10 @@ import networkx as nx
 from tulip import tlp
 import tulipplugins
 import leidenalg
+import igraph
 
 # local package
 from Dijkstra import *
-#from utils import *
 
 """
 This script offers an alternative to Paquet-CLouston an Bouchard `python` package
