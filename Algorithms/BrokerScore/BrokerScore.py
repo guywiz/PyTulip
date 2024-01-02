@@ -3,11 +3,13 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from tulip import tlp
+import tulipplugins
 from graph_converter import *
 import leidenalg
 
 # local package
 from Dijkstra import *
+from utils import *
 
 """
 This script offers an alternative to Paquet-CLouston an Bouchard `python` package
@@ -30,62 +32,84 @@ the local hierarchy is clean and does not contain any subgraph, as the script do
 a series of subgraph and makes use of unrobust naming conventions.
 """
 
-class BrokerScore:
-    def __init__(
-        self, graph, community_property_name, score_property_name="broker_score"
-    ):
-        print('-----')
-        print(graph)
-        print(community_property_name)
-        print(score_property_name)
-        print('-----')
-        self.graph = graph
-        self.community_property_name = community_property_name
-        self.score_property_name = score_property_name
-        # check whether the graph already stores a property for node communities
-		# if not, compute communities
-        communities_exist = self.graph.existProperty(self.community_property_name)
-        print(f'Communities exist: {communities_exist}')
-        self.community = self.graph.getLocalDoubleProperty(community_property_name)
-        if not communities_exist:
-            self.run_community_finding_algorithm()
-        self.neighbor_communities = {}
-        self.neighbor_communities_property = self.graph.getStringVectorProperty(
-            "neighbor_communities"
+class BrokerScorePlugin(tlp.DoubleAlgorithm):
+    def __init__(self, context):
+        tlp.DoubleAlgorithm.__init__(self, context)
+        # You can add parameters to the plugin here through the
+        # following syntax:
+        # self.add<Type>Parameter('<paramName>', '<paramDoc>',
+        #                         '<paramDefaultValue>')
+        # (see the documentation of class tlp.WithParameter to see what
+        #  parameter types are supported).
+        self.addIntegerPropertyParameter(
+            "communities",
+            help="Integer property holding commmunity membership of nodes",
+            defaultValue="",
+            isMandatory=True,
+            inParam=True,
+            outParam=False,
+            valuesDescription="Integer property holding commmunity membership of nodes",
         )
-        # instantiate communities as subgraphs
+        self.addIntegerParameter(
+            "nb iterations",
+            help="Number of trials (community detection runs)",
+            defaultValue="50",
+            isMandatory=True,
+            inParam=True,
+            outParam=False,
+            valuesDescription="Number of trials (community detection runs)",
+        )
+        self.addDoublePropertyParameter(
+            "result",
+            help="Double property holding the resulting coefficient",
+            defaultValue="viewMetric",
+            isMandatory=True,
+            inParam=True,
+            outParam=False,
+            valuesDescription="Broker score of nodes",
+        )
+
+    def check(self):
+        # This method is called before applying the algorithm on the
+        # input graph. You can perform some precondition checks here.
+        # See comments in the run method to know how to have access to
+        # the input graph.
+        #
+        # Must return a tuple (Boolean, string). First member indicates if the
+        # algorithm can be applied and the second one can be used to provide
+        # an error message.
+
 		# check whether communities have already been instanciated as subgraphs
 		# no fancy stuff here, if there are subgraphs assume everything works fine
 		# no name checking or number of subgraphs etc.
 		# its all or nothing
         test_community = len(list(self.graph.getSubGraphs())) > 0
-        if not test_community:
-            print('Need to build communities as subgraphs')
-            self.build_communities()
-        else:
-            print('Communities already instanciated as subgraphs')
-        self.collect_community_names()
-        
+        if test_community:
+            return (False, "Make sure communities have not been computed as subgraphs already (delete all subgraphs).")
+        return (True, "")
+
     def _standardize_community_names_(self):
         # normalize community names (subgraphs)
         # we assume subgraphs have been named by the Equal value plugin
         # (using its input metric name)
         # !!! and that communities are labelled using consecutive integers starting from 0 !!!
-        print()
-        print('_standardize_community_names_', [sub.getName() for sub in self.graph.getSubGraphs()])
         for sub in self.graph.getSubGraphs():
             # for what its worth, when using EqualValue, subgraphs are named using 
             # the property name and metric (integer) values, using colon ":"
             if not ':' in sub.getName():
                 return
             else:
-                sub.setName(f'{self.community_property_name}_{sub.getName().split(":")[1].strip()}')
+                community_property_name = self.community.getName()
+                sub.setName(f'{community_property_name}_{sub.getName().split(":")[1].strip()}')
 
     def build_communities(self):
+        # first get rid fo any remaining subgraph structure
+        # since a new one is built
+        for sub in self.graph.getSubGraphs():
+            self.graph.delSubGraph(sub)
         params = tlp.getDefaultPluginParameters("Equal Value", self.graph)
         params["property"] = self.community
         self.graph.applyAlgorithm("Equal Value", params)
-        self._standardize_community_names_()
 
     def run_community_finding_algorithm(self, algo="Leiden"):
         """
@@ -107,8 +131,6 @@ class BrokerScore:
                 self.community[n] = membership[gc.node_to_index[n]]
 
     def collect_community_names(self):
-        print()
-        print('collect_community_names', [sub.getName() for sub in self.graph.getSubGraphs()])
         self.community_names = sorted(
             [sub.getName() for sub in self.graph.getSubGraphs()],
             key=lambda x: int(x.split("_")[1]),
@@ -173,7 +195,7 @@ class BrokerScore:
             try:
                 vec[i] = community_size / comm_cohesion
             except ZeroDivisionError:
-                # happens if a community reduces to a single noe
+                # happens if a community reduces to a single node
                 vec[i] = 1
         return vec
 
@@ -187,6 +209,7 @@ class BrokerScore:
         a node u admitting at least one neighbor community (other than the one it belongs to)
         is a broker
         """
+        self.neighbor_communities = {}
         for node in self.graph.getNodes():
             neighCommunities = set(
                 [int(self.community[neigh]) for neigh in self.graph.getInOutNodes(node)]
@@ -228,23 +251,6 @@ class BrokerScore:
                         M[i, j] = 1 / np.sqrt(nbc)
         return M
 
-    def to_dataframes(self):
-        nodes_df = pd.DataFrame(
-            {
-                "node_id": [node.id for node in self.graph.getNodes()],
-                "community": [
-                    int(self.community[node]) for node in self.graph.getNodes()
-                ],
-            }
-        )
-        edges_df = pd.DataFrame(
-            {
-                "left": [self.graph.source(edge).id for edge in self.graph.getEdges()],
-                "right": [self.graph.target(edge).id for edge in self.graph.getEdges()],
-            }
-        )
-        return nodes_df, edges_df
-
     def compute_node_vector(self, node):
         node_vector = np.zeros(self.nb_communities)
         node_vector[int(self.community[node])] = 1
@@ -253,23 +259,9 @@ class BrokerScore:
                 node_vector[i] = 1
         return node_vector
 
-    def node_brokerage_score(self):
-        self.compute_neighbor_communities()
-        C = self.compute_community_vector()
-        M = self.compute_community_matrix()
-
-        self.graph.getLocalDoubleProperty(self.score_property_name)
-        for node in self.graph.getNodes():
-            node_vector = np.zeros(self.nb_communities)
-            node_vector[int(self.community[node])] = 1
-            if len(self.neighbor_communities[node]) > 0:
-                for i in self.neighbor_communities[node]:
-                    node_vector[i] = 1
-                V = np.multiply(node_vector, C)
-                self.graph[self.score_property_name][node] = V.dot(M.transpose())[
-                    int(self.community[node])
-                ]
-
+    def number_of_brokers(self):
+        return sum([1 if self.graph[self.score_property_name][n] > 0 else 0 for n in self.graph.getNodes()])
+    
     def compute_broker_network(self):
         i = 0
         current_graph = self.graph
@@ -278,7 +270,11 @@ class BrokerScore:
         selection_property_name = f"is_broker_{i}"
         # level 0 coincides with original graph
         community_0 = current_graph.getLocalDoubleProperty(community_property_name)
-        community_0.copy(self.community)
+        try:
+            community_0.copy(self.community)
+        except TypeError:
+            for n in current_graph.getNodes():
+                self.community[n] = int(community_0[n])
 
         while True:
             bs = BrokerScore(
@@ -305,8 +301,63 @@ class BrokerScore:
                 selection_property_name = f"is_broker_{i}"
                 current_graph = induced_subgraph
 
+    def run(self):
+        # This method is the entry point of the algorithm when it is called
+        # and must contain its implementation.
+        #
+        # The graph on which the algorithm is applied can be accessed through
+        # the 'graph' class attribute (see documentation of class tlp.Graph).
+        #
+        # The parameters provided by the user are stored in a dictionary
+        # that can be accessed through the 'dataSet' class attribute.
+        #
+        # The result of this double algorithm must be stored in the
+        # double property accessible through the 'result' class attribute
+        # (see documentation to know how to work with graph properties).
+        #
+        # The method must return a Boolean indicating if the algorithm
+        # has been successfully applied on the input graph.
+        self.community = self.dataSet["communities"]
+        nb_iterations = self.dataSet["nb iterations"]
+        broker_score = self.dataSet["result"]
+        broker_score.setAllNodeValue(0.0)
 
-def main(graph):
-    BS = BrokerScore(graph, "community", "broker_score")
-    BS.node_brokerage_score()
-    BS.compute_broker_network()
+        for k in range(nb_iterations):
+            self.run_community_finding_algorithm()
+            self.nb_communities = int(self.community.getNodeMax() + 1)
+            self.build_communities()
+            self._standardize_community_names_()
+            self.collect_community_names()
+            self.compute_neighbor_communities()
+
+            C = self.compute_community_vector()
+            print(f'Community vector\n {C}')
+            M = self.compute_community_matrix()
+            print(f'Community matrix\n {M}')
+            for node in self.graph.getNodes():
+                if len(self.neighbor_communities[node]) > 0:
+                    node_vector = self.compute_node_vector(node)
+                    print(f'Node {node.id} vector {node_vector}')
+                    V = np.multiply(node_vector, C)
+                    broker_score[node] += V.dot(M.transpose())[
+                        int(self.community[node])
+                    ]
+        for node in self.graph.getNodes():
+            broker_score[node] /= nb_iterations
+        # cleanup
+        for sub in self.graph.getSubGraphs():
+            self.graph.delSubGraph(sub)
+        return True
+
+
+# The line below does the magic to register the plugin into the plugin database
+# and updates the GUI to make it accessible through the menus.
+tulipplugins.registerPluginOfGroup(
+    "BrokerScorePlugin",
+    "Broker score",
+    "G.M.",
+    "22/12/2023",
+    "Computes the broker score of nodes as defined by Paquet-Clouston & Bouchard",
+    "1.0",
+    "Graph",
+)
