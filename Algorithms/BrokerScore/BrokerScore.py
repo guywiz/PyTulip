@@ -4,12 +4,11 @@ import pandas as pd
 import networkx as nx
 from tulip import tlp
 import tulipplugins
-from graph_converter import *
 import leidenalg
 
 # local package
 from Dijkstra import *
-from utils import *
+#from utils import *
 
 """
 This script offers an alternative to Paquet-CLouston an Bouchard `python` package
@@ -31,8 +30,63 @@ from within the Tulip desktop applicaiton. Running the script should be easy. Ma
 the local hierarchy is clean and does not contain any subgraph, as the script does produce
 a series of subgraph and makes use of unrobust naming conventions.
 """
+class iGraphConverter():
+	'''
+	Utility class to convert grpahs between formats,
+	baiscally Tulip and iGraph
+	(used by the iGrpah implementation of the Leiden algorithm)
+	'''
+	def __init__(self, tulip_graph):
+		super(iGraphConverter, self).__init__()
+		self.tulip_graph = tulip_graph
+		tulip_nodes = [n for n in self.tulip_graph.getNodes()]
+		tulip_edges = [e for e in self.tulip_graph.getEdges()]
+		self.node_to_index = {tulip_nodes[i]: i for i in range(self.tulip_graph.numberOfNodes())}
+		self.index_to_node = {i: tulip_nodes[i] for i in range(self.tulip_graph.numberOfNodes())}
+		self.edge_to_index = {e: self._edge_index_(e) for e in tulip_edges}
+		self.index_to_edge = {}
+		for tulip_edge, edge_index in self.edge_to_index.items():
+			self.index_to_edge[edge_index] = tulip_edge
 
-class BrokerScorePlugin(tlp.DoubleAlgorithm):
+	def _edge_index_(self, tulip_edge):
+		s = self.tulip_graph.source(tulip_edge)
+		t = self.tulip_graph.target(tulip_edge)
+		i = self.node_to_index[s]
+		j = self.node_to_index[t]
+		return i * self.tulip_graph.numberOfNodes() + j
+
+	def to_igraph(self, exported_node_properties = [], exported_edge_properties = []):
+		nb_vertices = self.tulip_graph.numberOfNodes()
+		edges = [(self.node_to_index[self.tulip_graph.source(e)], self.node_to_index[self.tulip_graph.target(e)]) for e in self.tulip_graph.getEdges()]
+		iG = igraph.Graph(nb_vertices)
+		iG = igraph.Graph.as_directed(iG, 'random')
+		iG.add_edges(edges)
+		for p in exported_node_properties:
+			self.write_node_property(iG, p)
+		for p in exported_edge_properties:
+			self.write_edge_property(iG, p)
+		return iG
+
+	def write_node_property(self, i_graph, property_name):
+		values = []
+		#for i in range(self.tulip_graph.numberOfNodes():
+		# tulip_node_from_index = self.index_to_node[i]
+		# property_value = self.tulip_graph[property_name]
+		i_graph.vs[property_name] = [self.tulip_graph[property_name][self.index_to_node[i]] for i in range(self.tulip_graph.numberOfNodes())]
+
+	# edge in igraph, index of source and target in igraph, convert to unique integer
+	# use map integer -> edge in tulip graph
+	def write_edge_property(self, i_graph, property_name):
+		property_values = []
+		for e in i_graph.es:
+			i = e.source
+			j = e.target
+			edge_index = i * self.tulip_graph.numberOfNodes() + j
+			e_tulip = self.index_to_edge[edge_index]
+			property_values.append(self.tulip_graph[property_name][e_tulip])
+		i_graph.es[property_name] = property_values
+
+class BrokerScore(tlp.DoubleAlgorithm):
     def __init__(self, context):
         tlp.DoubleAlgorithm.__init__(self, context)
         # You can add parameters to the plugin here through the
@@ -353,7 +407,7 @@ class BrokerScorePlugin(tlp.DoubleAlgorithm):
 # The line below does the magic to register the plugin into the plugin database
 # and updates the GUI to make it accessible through the menus.
 tulipplugins.registerPluginOfGroup(
-    "BrokerScorePlugin",
+    "BrokerScore",
     "Broker score",
     "G.M.",
     "22/12/2023",

@@ -9,16 +9,19 @@ Our code follows from the reformulation of Paquet-Clouston and Bouchard formula 
 
 The main class `BrokerScore` implements all necessary methods, partly relying on the `Dijkstra` class to run a dfs and compute a community cohesion score. In order to stick with Paquet-Clouston and Bouchard definition of cohesion, we invoke networkX average path length routine which requires to convert from Tulip into the iGraph format.
 
-The score is computer in a matter of seconds for graph containing thousands of nodes and edges and even faster for smaller graphs.
+The score is computed in a matter of (tenth of a) seconds for graph containing thousands of nodes and edges and even faster for smaller graphs.
 
 ## Using the script from within Tulip
-A code snippet at the bottom of the BrokerScore class file allows the use of the code from within the Tulip desktop application. Running the script should be easy. Make sure the local hierarchy is clean and does not contain any subgraph, as the script does produce a series of subgraph and makes use of unrobust naming conventions.
+You may either use the code as a script, which will load a plugin after it is run. You then need to invoke the plugin through the GUI, paying attention to the parameters the plugin needs to properly run. Another avenue is to invoke the pluging through a script, typically in the main function:
 ```
 def main(graph):
-	BS = BrokerScore(graph, "community", "broker_score")
-	BS.node_brokerage_score()
-	BS.compute_broker_network()
+    params = tlp.getDefaultPluginParameters('Broker score', graph)
+    community = graph.getIntegerProperty('community')
+    params['communities'] = community
+    broker = graph.getDoubleProperty('broker_score')
+    params['result'] = broker
+    graph.applyDoubleAlgorithm('Broker score', broker, params)
 ```
-The script also allow to also to build a sub-network (induced subgraph) solely consisting of brokers. The construct can be iterated, as not all brokers act as broker iin the broker network. The iteration ultiately ends, giving rise to a hierarchyof sub-networks.
+Note that the BrokerScore class can be used to build a sub-network (induced subgraph) solely consisting of brokers. The construct can be iterated, as not all brokers act as broker iin the broker network. The iteration ultiately ends, giving rise to a hierarchyof sub-networks.
 
 
