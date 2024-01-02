@@ -1,7 +1,7 @@
 # Broker Score
-This script offers an alternative to Paquet-CLouston an Bouchard `python` package computing their broker score defined on node sof a network. Please refer to their paper:
+This script offers an alternative to Paquet-Clouston an Bouchard `python` package computing their broker score defined on node sof a network. Please refer to their paper:
 
-Paquet-Clouston, M., & Bouchard, M. (2023). A Robust Measure to Uncover Community Brokerage in Illicit Networks. _Journal of Quantitative Criminology_, 39(3), 705-733.
+	Paquet-Clouston, M., & Bouchard, M. (2023). A Robust Measure to Uncover Community Brokerage in Illicit Networks. _Journal of Quantitative Criminology_, 39(3), 705-733.
 
 or to [their GitHub repository](https://github.com/Masarah/community_broker_score) for code relying on `pandas` dataframes and `networkx` to store network data and compute the score. Our approach alternatively relies on [`tulip-python`](https://pypi.org/project/tulip-python/), a python binding of the [C++ Graph Visualization framework Tulip](https://tulip.labri.fr/).
 
