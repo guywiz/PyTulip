@@ -5,7 +5,9 @@ Paquet-Clouston, M., & Bouchard, M. (2023). A Robust Measure to Uncover Communit
 
 or to [their GitHub repository](https://github.com/Masarah/community_broker_score) for code relying on `pandas` dataframes and `networkx` to store network data and compute the score. Our approach alternatively relies on [`tulip-python`](https://pypi.org/project/tulip-python/), a python binding of the [C++ Graph Visualization framework Tulip](https://tulip.labri.fr/).
 
-Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product. The measure initially defined as $N = uv$.
+Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product. The measure can be obtained by computing a matrix
+
+$$M = \left[ \begin{matrix} 1 & 0 \\ 0 & 1 \end{matrix} \right]$$
 
 The main class `BrokerScore` implements all necessary methods, partly relying on the `Dijkstra` class to run a dfs and compute a community cohesion score. In order to stick with Paquet-Clouston and Bouchard definition of cohesion, we invoke networkX average path length routine which requires to convert from Tulip into the iGraph format.
 
