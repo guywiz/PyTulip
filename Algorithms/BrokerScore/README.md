@@ -16,7 +16,9 @@ m_{C, C'} = \left\{
 \end{array}
 \right.
 $$
-We also need to consider a community level vector$${\bf C} = (\frac{|C|}{coh(C)})_{C \in {\bf C}}$$indexed by communities $C \in {\bf C}$, where $coh(C)$ referes to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})_{C\in {\bf C}}$ indicating communities to which a broker node $u$ connects:
+We also need to consider a community level vector
+$${\bf C} = (\frac{|C|}{coh(C)})_{C \in {\bf C}}$$
+indexed by communities $C \in {\bf C}$, where $coh(C)$ referes to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})_{C\in {\bf C}}$ indicating communities to which a broker node $u$ connects:
 
 $$
 \delta_{C, u} = \left\{ 
@@ -26,6 +28,7 @@ $$
 \end{array}
 \right.
 $$
+
 with the final broker score of a node being equal to the product $(\Delta_u \otimes {\bf C}) \cdot M$ (where $\otimes$ indicates the Hadamard product).
 
 ## The code
