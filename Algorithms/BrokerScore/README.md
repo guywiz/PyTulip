@@ -5,29 +5,16 @@ Paquet-Clouston, M., & Bouchard, M. (2023). A Robust Measure to Uncover Communit
 
 or to [their GitHub repository](https://github.com/Masarah/community_broker_score) for code relying on `pandas` dataframes and `networkx` to store network data and compute the score. Our approach alternatively relies on [`tulip-python`](https://pypi.org/project/tulip-python/), a python binding of the [C++ Graph Visualization framework Tulip](https://tulip.labri.fr/).
 
-Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product (allowing to use `numpy` linear algebra routines). The measure is based on quantities $NBC_{C, C'}$ equal to the number of nodes in community $C$ acting as brokers for community $C'$. It can be obtained by computing a meso level (community level) matrix $M = [m_{C,C'}]_{C, C' \in \bf C}$ where
+Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product (allowing to use `numpy` linear algebra routines). The measure is based on quantities $NBC_{C, C'}$ equal to the number of nodes in community $C$ acting as brokers for community $C'$. It can be obtained by computing a meso level (community level) matrix $M = [m_{C,C'}]_{C, C' \in \bf C}$ where $m_{C, C'}$ is equal to:
 
-$$
-m_{C, C'} = \left\{ 
-\begin{array}{cl}
-1 & \text{ if } C = C' \\
-\frac{1}{\sqrt{NCB_{C, C'}}} & \text{ if } NCB_{C, C'} \not = 0 \\
-0 & \text{ otherwise }
-\end{array}
-\right.
-$$
-We also need to consider a community level vector
-$${\bf C} = (\frac{|C|}{coh(C)})_{C \in {\bf C}}$$
-indexed by communities $C \in {\bf C}$, where $coh(C)$ referes to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})_{C\in {\bf C}}$ indicating communities to which a broker node $u$ connects:
+- 1 if $C = C'$
+- $\frac{1}{\sqrt{NCB_{C, C'}}}$ if $NCB_{C, C'} \not = 0$
+- 0 otherwise
 
-$$
-\delta_{C, u} = \left\{ 
-\begin{array}{cl}
-1 & \text{ if } C \in {\bf C}(u) \\
-0 & \text{ otherwise }
-\end{array}
-\right.
-$$
+We also need to consider a community level vector: ${\bf C} = (\frac{|C|}{coh(C)})_{C \in {\bf C}}$ indexed by communities $C \in {\bf C}$, where $coh(C)$ referes to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})_{C\in {\bf C}}$ indicating communities to which a broker node $u$ connects, where $\delta_{C, u}$ is equal to:
+
+- 1 if $C \in {\bf C}(u)$
+- 0 otherwise
 
 with the final broker score of a node being equal to the product $(\Delta_u \otimes {\bf C}) \cdot M$ (where $\otimes$ indicates the Hadamard product).
 
