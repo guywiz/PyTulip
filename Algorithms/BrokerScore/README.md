@@ -5,17 +5,30 @@ Paquet-Clouston, M., & Bouchard, M. (2023). A Robust Measure to Uncover Communit
 
 or to [their GitHub repository](https://github.com/Masarah/community_broker_score) for code relying on `pandas` dataframes and `networkx` to store network data and compute the score. Our approach alternatively relies on [`tulip-python`](https://pypi.org/project/tulip-python/), a python binding of the [C++ Graph Visualization framework Tulip](https://tulip.labri.fr/).
 
-Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product. The measure can be obtained by computing a matrix
+Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product (allowing to use `numpy` linear algebra routines). The measure is based on quantities $NBC_{C, C'}$ equal to the number of nodes in community $C$ acting as brokers for community $C'$. It can be obtained by computing a meso level (community level) matrix $M = [m_{C,C'}]_{C, C' \in \bf C}$ where
 
 $$
-M =
-\left[ \begin{matrix}
-1 & 0 \\\\\\\
-0 & 1
-\end{matrix}
-\right]
+m_{C, C'} = \left\{ 
+\begin{array}{cl}
+1 & \text{ if } C = C' \\
+\frac{1}{\sqrt{NCB_{C, C'}}} & \text{ if } NCB_{C, C'} \not = 0 \\
+0 & \text{ otherwise }
+\end{array}
+\right.
 $$
+We also need to consider a community level vector$${\bf C} = (\frac{|C|}{coh(C)})_{C \in {\bf C}}$$indexed by communities $C \in {\bf C}$, where $coh(C)$ referes to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})_{C\in {\bf C}}$ indicating communities to which a broker node $u$ connects:
 
+$$
+\delta_{C, u} = \left\{ 
+\begin{array}{cl}
+1 & \text{ if } C \in {\bf C}(u) \\
+0 & \text{ otherwise }
+\end{array}
+\right.
+$$
+with the final broker score of a node being equal to the product $(\Delta_u \otimes {\bf C}) \cdot M$ (where $\otimes$ indicates the Hadamard product).
+
+## The code
 The main class `BrokerScore` implements all necessary methods, partly relying on the `Dijkstra` class to run a dfs and compute a community cohesion score. In order to stick with Paquet-Clouston and Bouchard definition of cohesion, we invoke networkX average path length routine which requires to convert from Tulip into the iGraph format.
 
 The score is computed in a matter of (tenth of a) seconds for graph containing thousands of nodes and edges and even faster for smaller graphs.
