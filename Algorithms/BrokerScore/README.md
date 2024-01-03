@@ -11,7 +11,7 @@ Our code follows from the reformulation of Paquet-Clouston and Bouchard formula 
 - $\frac{1}{\sqrt{NCB_{C, C'}}}$ if $NCB_{C, C'} \not = 0$
 - 0 otherwise
 
-We also need to consider a community level vector: ${\bf C} = (\frac{|C|}{coh(C)})$ for $C \in {\bf C}$ indexed by communities $C \in {\bf C}$, where $coh(C)$ referes to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})_{C\in {\bf C}}$ indicating communities to which a broker node $u$ connects, where $\delta_{C, u}$ is equal to:
+We also need to consider a community level vector: ${\bf C} = (\frac{|C|}{coh(C)})$ indexed by communities $C \in {\bf C}$, where $coh(C)$ refers to the internal cohesion of a community (Paquet-Clouston and Bouchard define it as the average path length within a community). Given a node, one can form a vector $\Delta_u = (\delta_{C,u})$ (indexed by communities $C\in {\bf C}$ as well) indicating communities to which a broker node $u$ connects, where $\delta_{C, u}$ is equal to:
 
 - 1 if $C \in {\bf C}(u)$
 - 0 otherwise
