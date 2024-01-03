@@ -5,7 +5,7 @@ Paquet-Clouston, M., & Bouchard, M. (2023). A Robust Measure to Uncover Communit
 
 or to [their GitHub repository](https://github.com/Masarah/community_broker_score) for code relying on `pandas` dataframes and `networkx` to store network data and compute the score. Our approach alternatively relies on [`tulip-python`](https://pypi.org/project/tulip-python/), a python binding of the [C++ Graph Visualization framework Tulip](https://tulip.labri.fr/).
 
-Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product (allowing to use `numpy` linear algebra routines). The measure is based on quantities $NBC_{C, C'}$ equal to the number of nodes in community $C$ acting as brokers for community $C'$. It can be obtained by computing a meso level (community level) matrix $M = [m_{C,C'}]_{C, C' \in \bf C}$ where $m_{C, C'}$ is equal to:
+Our code follows from the reformulation of Paquet-Clouston and Bouchard formula as a vector and matrix product (allowing to use `numpy` linear algebra routines). The measure is based on quantities $NBC_{C, C'}$ equal to the number of nodes in community $C$ acting as brokers for community $C'$. It can be obtained by computing a meso level (community level) matrix $M = (m_{C,C'})$ for $C, C' \in {\bf C}$ where $m_{C,C'}$ is equal to:
 
 - 1 if $C = C'$
 - $\frac{1}{\sqrt{NCB_{C, C'}}}$ if $NCB_{C, C'} \not = 0$
