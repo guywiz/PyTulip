@@ -15,7 +15,7 @@ This is a meso level statistics requiring and depending on a community structure
 
 The library relies on [`tulip-python`](https://pypi.org/project/tulip-python/), a python binding of the [C++ Graph Visualization framework Tulip](https://tulip.labri.fr/). Tulip also comes as a GUI.
 
-Several libraries need to be installed prior to using the plugin, that can for instance be installed running `poetry install --no-root`. A simple test script can optionally be run.
+Several libraries need to be installed prior to using the plugin, that can for instance be installed running `poetry install --no-root`. The specific dependencies are listed as part of the `pyproject.toml` file. A simple test script can optionally be run.
 
 The plugin itself is typically used as:
 ```
