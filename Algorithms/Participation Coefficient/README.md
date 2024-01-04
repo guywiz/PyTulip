@@ -9,4 +9,4 @@ and
 
 Guimera, R., & Amaral, L. A. N. (2005). Cartography of complex networks: modules and universal roles. Journal of Statistical Mechanics: Theory and Experiment, 2005(02), P02001.
 
-This is a meso level statistics requiring and depending on a community structure of the graph. Because community structures may not be stable, the routine iteratively calls the Leiden community finding algorithm before computing a ratio reflecting how much a node connects ot toher communities in a diverse manner.
+This is a meso level statistics requiring and depending on a community structure of the graph. Because community structures may not be stable, the routine iteratively calls the Leiden community finding algorithm before computing a ratio reflecting how much a node connects to other communities in a diverse manner.
