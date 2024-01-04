@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "participation coefficient"
+version = "0.1.0"
+description = "Meso level network measure participation coefficient as defined by Guimera et al."
+authors = ["Guy <guywiz@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+tulip-python = "^5.7.2"
+networkx = "^3.2.1"
+igraph = ">0.10"
+leidenalg = ">0.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
