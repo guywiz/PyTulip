@@ -3,9 +3,7 @@
 
 cff-version: 1.2.0
 title: >-
-  Utility classes designed for the tulip-python graph
-  library. Of particular interest, the repo contains source
-  code for  multivariate multigraph reduction.
+  Source code for multivariate multigraph reduction (as part of a repo of utility classes designed for the tulip-python graph library.)
 message: >-
   python implementation of a multivariate multigraph
   reduction algorithm, together with several utility classes
