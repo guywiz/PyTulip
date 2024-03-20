@@ -1,0 +1,37 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Utility classes designed for the tulip-python graph
+  library. Of particular interest, the repo contains source
+  code for  multivariate multigraph reduction.
+message: >-
+  python implementation of a multivariate multigraph
+  reduction algorithm, together with several utility classes
+  to use the historization capability, as well as the
+  on-the-fly recomputation of weights
+type: software
+authors:
+  - given-names: Guy
+    family-names: Melançon
+    email: guywiz@gmail.com
+    orcid: 'https://orcid.org/0000-0003-3193-7261'
+repository-code: 'https://github.com/guywiz/PyTulip/'
+abstract: >-
+  Concerning the multivariate multigraph reduction
+  algorithm: The algorithm processes a multivariate
+  multigraph (MMG), that is a graph with multiple weighted
+  edges, where nodes and edges of various types (weights
+  typically depend on types). Assume some nodes are of type
+  "PERSON". The algorithm outputs a weighted social network
+  between persons of the MMG. Although non-deterministic,
+  the social network it computes is unique. The computation
+  of weights is historicized: edges of the social network
+  hold an arithmetic expression computed along the reduction
+  of the MMG, allowing to recompute weights on-the-fly
+  (varying weights associated to types in the MMG).
+keywords:
+  - >-
+    Multivariate multigraph, graph reduction, graph
+    rewriting, social network
