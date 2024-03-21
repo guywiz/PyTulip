@@ -1,4 +1,5 @@
 from tulip import *
+import numpy as np
 
 class MMG_ring(object):
 	"""
@@ -59,3 +60,24 @@ class MMG_ring(object):
 			return self.contract_operator(list(map(self._evaluate_, self._tokenize_(expression[2:-1]))))
 		else:
 			return self.atomic_values[expression]
+
+
+class MMG_plus_log(MMG_ring):
+	def __init__(self):
+		super(MMG_plus_log, self).__init__()
+
+	def merge_operator(self, *weights):
+		return sum([np.log(w) for w in list(*weights)])
+
+	def contract_operator(self, *weights):
+		return max(*weights)
+
+class MMG_max_product(MMG_ring):
+	def __init__(self):
+		super(MMG_max_product, self).__init__()
+
+	def merge_operator(self, *weights):
+		return max(*weights)
+
+	def contract_operator(self, *weights):
+		return np.exp(sum([np.log(w) for w in list(*weights)]))
