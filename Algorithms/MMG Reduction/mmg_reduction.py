@@ -37,14 +37,14 @@ class MMG_reduction(object):
 	may be used to compute a social network of vehicles, assuming this is of interest as ot may reveal
 	some pattern in the activity of the network, or unveal how a third party took part in these activities.
 	"""
-	def __init__(self, graph):
+	def __init__(self, graph, ring):
 		super(MMG_reduction, self).__init__()
 		self.graph = graph
 		self.item_id = self.graph.getStringProperty('id')
 		self.history = self.graph.getStringProperty('history')
 		self.compute_history = self.graph.getStringProperty('compute_history')
 		self._initial_history_()
-		self.ring = MMG_ring()
+		self.ring = ring
 
 	def _initial_history_(self):
 		for e in self.graph.getEdges():
@@ -54,7 +54,7 @@ class MMG_reduction(object):
 	def set_projected_type(self, projected_type = 'PERSONNE'):
 		'''
 		Types of nodes and edges are stored in a string property
-		whose ame can be passed as a parameter. The method also require
+		whose name can be passed as a parameter. The method also require
 		to specify the value of nodes that are being projected onto a social network.
 		'''
 		self.original_multivariate_graph = self.graph.addCloneSubGraph()
@@ -95,7 +95,7 @@ class MMG_reduction(object):
 			nodes = sorted(nodes, key=lambda x: degree[x])
 		#print('AFTER PRUNING, NB NODES:', self.result_graph.numberOfNodes())
 		end_time = time.time()
-		print(f'PRUNING TIME {(end_time - start_time)}')
+		return end_time - start_time
 
 	def _merge_multiple_edges_(self):
 		#print('BEFORE MERGE, NB EDGES:', self.result_graph.numberOfEdges())
@@ -125,8 +125,9 @@ class MMG_reduction(object):
 				self.history[merged_edge] = merge_history
 				merge_compute_history = f"{';'.join(compute_history)}"
 				self.compute_history[merged_edge] = f"M({merge_compute_history})"
+				self.item_id[merged_edge] = self.compute_history[merged_edge]
 		end_time = time.time()
-		print(f'MERGING TIME {(end_time - start_time)}')
+		return end_time - start_time
 
 	def _contract_node_deg_2_(self, node):
 		'''
@@ -149,6 +150,7 @@ class MMG_reduction(object):
 		contract_compute_history = f"C({';'.join(compute_history)})"
 		self.history[e] = contract_history
 		self.compute_history[e] = contract_compute_history
+		self.item_id[e] = self.compute_history[e]
 
 	def _contract_deg_2_(self):
 		'''
@@ -170,7 +172,7 @@ class MMG_reduction(object):
 			nodes = list(filter(lambda x: self.item_type[x] != self.projected_type and degree[x] == 2, [n for n in self.result_graph.getNodes()]))
 		#print(f'AFTER CONTRACTING (DEG 2), NB NODES: {self.result_graph.numberOfNodes()}, NB EDGES: {self.result_graph.numberOfEdges()}')
 		end_time = time.time()
-		print(f'CONTRACT DEG 2 TIME {(end_time - start_time)}')
+		return end_time - start_time
 		
 	def _are_neighbours_(self, anode, bnode):
 		e = self.result_graph.existEdge(anode, bnode, directed=False)
@@ -181,7 +183,9 @@ class MMG_reduction(object):
 		At this point, resulting graph only contains non person nodes of degree > 2.
 		We thus fall onto the phase where we process simple paths.
 		'''
-		start_time = time.time()
+		#print('CONTRACTING SIMPLE PATHS')
+		total_time = 0.0
+		subgraphs = []
 		connected_components = self.result_graph.getDoubleProperty('connected_component')
 		params = tlp.getDefaultPluginParameters('Connected Components', self.result_graph)
 		params['result'] = connected_components
@@ -193,22 +197,37 @@ class MMG_reduction(object):
 		for i, start_node in enumerate(projected_nodes):
 			for j, end_node in enumerate(projected_nodes):
 				if j > i and connected_components[start_node] == connected_components[end_node]:
+					start_start_time = time.time()
 					simpath.reset(start_node, end_node)
-					paths = sorted(simpath.getSimplePaths(), key = lambda x: self._simple_path_weight_(x))
+					paths = sorted(simpath.getSimplePaths(), key = lambda x: - self._simple_path_weight_(x))
+					node_size, edge_size = self.subgraph_size(paths)
 					collected_paths += paths
 					for p in self._sort_out_paths_(paths):
 						to_create_edges.append([p, self._simple_path_weight_(p)])
+					end_end_time = time.time()
+					if node_size > 2:
+						total_time += end_end_time - start_start_time
+						subgraphs.append([self.graph['viewLabel'][start_node], self.graph['viewLabel'][end_node], node_size, edge_size])
 		self._create_edges_(to_create_edges)
 		self._clean_up_paths_(collected_paths)
-		end_time = time.time()
-		print(f'CONTRACT SIMPLE PATHS TIME {end_time - start_time}')
+		return total_time, subgraphs		
+
+	def subgraph_size(self, paths):
+		node_set = set()
+		edge_set = set()
+		for p in paths:
+			for i in range(len(p)//2):
+				node_set.add(p[2*i])
+				edge_set.add(p[2*i+1])
+			node_set.add(p[-1])
+		return len(node_set), len(edge_set)
 
 	def _sort_out_paths_(self, path_list):
-		keep_paths = []
 		while(len(path_list) > 0):
-			yield path_list.pop(0)
+			p = path_list.pop(0)
+			yield p
 			try:
-				path_list = self._filter_paths_(path_list[0], path_list)
+				path_list = self._filter_paths_(p, path_list)
 			except IndexError:
 				# this error only happens after path_list is emptied
 				# by the previous pop instruction
@@ -218,9 +237,8 @@ class MMG_reduction(object):
 
 	def _filter_paths_(self, path, path_list):
 		admissible_paths = []
-		path_set = set(path)
+		path_set = set(path[1:-1])
 		for p in path_list:
-			p_set = set(p)
 			if len(path_set.intersection(set(p))) == 0:
 				admissible_paths.append(p)
 		return admissible_paths
@@ -242,6 +260,7 @@ class MMG_reduction(object):
 			self.compute_history[e] = compute_history[0]
 		else:
 			self.compute_history[e] = f"C({';'.join(compute_history)})"
+		self.item_id[e] = self.compute_history[e]
 
 	def _clean_up_paths_(self, path_list):
 		for p in path_list:
@@ -258,11 +277,25 @@ class MMG_reduction(object):
 		tlp.saveGraph(self.graph, filename)
 
 	def run_algorithm(self):
-		self._prune_()
-		self._merge_multiple_edges_()
-		self._prune_()
-		self._contract_deg_2_()
-		self._prune_()
-		self._contract_simple_paths_()
-		self._merge_multiple_edges_()
-		self._prune_()
+		pruning = 0.0
+		merging = 0.0
+		contracting = 0.0
+		pruning += self._prune_()
+		merging += self._merge_multiple_edges_()
+		pruning += self._prune_()
+		contracting += self._contract_deg_2_()
+		pruning += self._prune_()
+		path_contract_time, subgraphs = self._contract_simple_paths_()
+		contracting += path_contract_time
+		merging += self._merge_multiple_edges_()
+		pruning += self._prune_()
+		return pruning, merging, contracting, subgraphs
+
+def main(graph):
+	# graph is a multivariate multigraph
+	# the routine creates a clone subgraph of graph
+	# and a social network subgraph
+	mmr = MMG_reduction(graph)
+	mmr.set_projected_type(projected_type = 'PERSON')
+	mmr.set_weight_property(weight_property_name = 'weight')
+	mmr.run_algorithm()
