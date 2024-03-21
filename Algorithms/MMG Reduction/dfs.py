@@ -7,9 +7,11 @@ class DFS(object):
 	optionally requiring that end nodes satisfy a given constraint
 	(having a specific property, not belonging to a given type, etc.)
 
-	This class was implemented in teh context of deriving a social network
-	(of persons) from a multivariate graph.. Paths were required to have
-	their end points to be persons, while inner nodes would not.
+	This class was implemented in the context of deriving a social network
+	(of persons) from a multivariate graph. Paths were required to have
+	their end points to be persons, while inner nodes would not. This motovated
+	the introduction of a constraint implicitly defining certain paths to be "admissible"
+	(those with inner nodes satisfying the constraint).
 
 	Bruno Pinaud, Maud Bénichou, Guy Melançon (2023).
 	Extraction d'un réseau social criminel par transformation d'un graphe d'enquête multivarié.
