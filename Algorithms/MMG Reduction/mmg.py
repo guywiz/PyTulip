@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 from mmg_parser import *
 from mmg_reduction import *
+from mmg_ring import *
 
 class MMG(object):
 	"""
@@ -16,12 +17,23 @@ class MMG(object):
 		parser = argparse.ArgumentParser(description='Process csv files into a multivariate mutigraph and social network.')
 		parser.add_argument('--nodes', type=str, required=True, help='Name of csv file listing nodes of a multivariate multigraph.')
 		parser.add_argument('--edges', type=str, required=True, help='Name of csv file listing edges of a multivariate multigraph.')
-		parser.add_argument('--projected_type', type=str, help='Value of node type to reduce the multivariate multigraph to. Default value is PERSON')
+		parser.add_argument('--ring', type=str, choices=['max_product', 'plus_log'], help='specifies the ring used to compute the edges binding strength')
 		parser.add_argument('--output', type=str, required=True, help='File to which resulting graph should be stored.')
+		parser.add_argument('--projected_type', type=str, help='Value of node type to reduce the multivariate multigraph to. Default value is PERSON')
 		args = parser.parse_args()
 		self.node_file = args.nodes
 		self.edge_file = args.edges
 		self.output_file = args.output
+
+		self.ring = None
+		if args.ring:
+			if args.ring == 'plus_log':
+				self.ring = MMG_plus_log()
+			else:
+				self.ring = MMG_max_product()
+		else:
+			self.ring = MMG_max_product()
+
 		if args.projected_type:
 			self.projected_type = args.projected_type
 			print(f'PROJECTED TYPE {self.projected_type}')
@@ -58,7 +70,7 @@ class MMG(object):
 		G = parser.get_multivariate_multigraph()
 		print(f'Number of nodes {G.numberOfNodes()} - Number of edges {G.numberOfEdges()}')
 
-		reductor = MMG_reduction(G)
+		reductor = MMG_reduction(G, self.ring)
 		reductor.set_projected_type(projected_type=self.projected_type)
 		reductor.set_weight_property()
 

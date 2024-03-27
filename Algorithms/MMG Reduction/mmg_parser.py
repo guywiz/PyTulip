@@ -25,7 +25,10 @@ class MMG_parser(object):
 		self.types[node] = node_info['type']
 		self.labels[node] = node_info['label']
 		self.shapes[node] = tlp.NodeShape.Icon
-		self.icons[node] = node_info['icon']
+		try:
+			self.icons[node] = node_info['icon']
+		except KeyError:
+			pass
 		self.ids[node] = node_info['id']
 		return node
 
