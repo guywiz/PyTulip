@@ -1,6 +1,5 @@
 from tulip import *
 from mmg_ring import *
-#from agree import *
 
 class MMG_player(object):
 	"""
