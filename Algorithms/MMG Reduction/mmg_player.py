@@ -1,5 +1,6 @@
 from tulip import *
 from mmg_ring import *
+from dfs import *
 
 class MMG_player(object):
 	"""
@@ -23,6 +24,7 @@ class MMG_player(object):
 		self.result_graph = graph.getSubGraph(f'Projected graph {self.projected_type}')
 		self.original_multivariate_graph = graph.getSubGraph('Original multivariate graph')
 		self.ring = MMG_ring()
+		self.simpath = DFS(self.original_multivariate_graph, None, None, constraint = lambda x: self.types[x] != self.projected_type)
 
 	def reset_ring_atomic_values(self):
 		edges_values = {}
@@ -39,15 +41,35 @@ class MMG_player(object):
 		print(f'HISTORIZATION EDGES {selected_edges}')
 		self.original_multivariate_graph['viewSelection'].setAllNodeValue(False)
 		self.original_multivariate_graph['viewSelection'].setAllEdgeValue(False)
+
+		for selected_edge in selected_edges:
+			start_node = self.result_graph.source(selected_edge)
+			end_node = self.result_graph.target(selected_edge)
+			self.simpath.reset(start_node, end_node)
+			paths = self.simpath.getSimplePaths()
+			for p in paths:
+				for x in p:
+					self.original_multivariate_graph['viewSelection'][x] = True
+					self.original_multivariate_graph['viewColor'][x] = tlp.Color.OrangeRed
+
 		for selected_edge in selected_edges:
 			history_edge_ids = self.history[selected_edge].split(';')
 			print(f'HISTORY {history_edge_ids}')
 			for id in history_edge_ids:
 				e = self.find_edge(id)
 				self.original_multivariate_graph['viewSelection'][e] = True
-				self.original_multivariate_graph['viewSelection'][self.original_multivariate_graph.source(e)] = True
-				self.original_multivariate_graph['viewSelection'][self.original_multivariate_graph.target(e)] = True
+				self.original_multivariate_graph['viewColor'][e] = tlp.Color.BlueViolet
+				source = self.original_multivariate_graph.source(e)
+				self.original_multivariate_graph['viewSelection'][source] = True
+				self.original_multivariate_graph['viewColor'][source] = tlp.Color.BlueViolet
+				target = self.original_multivariate_graph.target(e)
+				self.original_multivariate_graph['viewSelection'][target] = True
+				self.original_multivariate_graph['viewColor'][target] = tlp.Color.BlueViolet
+
 		sub = self.original_multivariate_graph.addSubGraph(self.original_multivariate_graph['viewSelection'])
+		sub['viewSize'][start_node] *= 3
+		sub['viewSize'][end_node] *= 3
+
 		sub.setName(f'Expand edge {history_edge_ids}')
 		sub['viewSelection'].setAllNodeValue(False)
 		sub['viewSelection'].setAllEdgeValue(False)

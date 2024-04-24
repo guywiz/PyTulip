@@ -23,7 +23,10 @@ class MMG_parser(object):
 		node = self.graph.addNode()
 		self.ids[node] = node_info['id']
 		self.types[node] = node_info['type']
-		self.labels[node] = node_info['label']
+		try:
+			self.labels[node] = node_info['label']
+		except KeyError:
+			self.labels[node] = node_info['id']
 		self.shapes[node] = tlp.NodeShape.Icon
 		try:
 			self.icons[node] = node_info['icon']
@@ -33,16 +36,27 @@ class MMG_parser(object):
 		return node
 
 	def _create_edge_(self, edge_info):
-		source = self._get_node_(edge_info['source'])
+		try:
+			source = self._get_node_(edge_info['source'])
+		except KeyError as e:
+			print(edge_info)
+			raise e
 		target = self._get_node_(edge_info['target'])
-		edge = self.graph.addEdge(source, target)
+		try:
+			edge = self.graph.addEdge(source, target)
+		except TypeError as e:
+			print(edge_info)
+			raise e
 		self.ids[edge] = edge_info['id']
 		self.types[edge] = edge_info['type']
 		try:
 			self.labels[edge] = edge_info['label']
 		except KeyError:
 			pass
-		self.weights[edge] = float(edge_info['weight'])
+		try:
+			self.weights[edge] = float(edge_info['weight'])
+		except KeyError:
+			self.weights[edge] = 1
 		return edge
 
 	def _get_node_(self, node_id):
@@ -50,13 +64,14 @@ class MMG_parser(object):
 			i = self.id_list.index(node_id)
 			return self.node_list[i]
 		except ValueError:
+			print(f'id {node_id} not in')
 			return None
 
 	def _parse_nodes_(self):
 		'''
 		Parses a ;-separated csv file describing nodes of the multivariate multigraph.
 		'''
-		with open(self.node_file, 'r') as fnode:
+		with open(self.node_file, 'r', encoding='utf-8-sig') as fnode:
 			node_reader = csv.DictReader(fnode, delimiter=';')
 			for row in node_reader:
 				self._create_node_(row)
@@ -67,7 +82,7 @@ class MMG_parser(object):
 		'''
 		Parses a ;-separated csv file describing edges of the multivariate multigraph.
 		'''
-		with open(self.edge_file, 'r') as fedge:
+		with open(self.edge_file, 'r', encoding='utf-8-sig') as fedge:
 			node_reader = csv.DictReader(fedge, delimiter=';')
 			for row in node_reader:
 				self._create_edge_(row)
