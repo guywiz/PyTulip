@@ -119,6 +119,9 @@ class ParticipationCoefficient(tlp.DoubleAlgorithm):
         )
         node_partition = [set(communities[i]) for i in range(len(communities))]
         try:
+            xG = nx.Graph()
+            xG.add_nodes_from([i for i in range(graph.numberOfNodes())])
+            xG.add_edges_from(iG.get_edgelist())
             modularity = nx.community.modularity(nx.Graph(iG.get_edgelist()), node_partition)
         except nx.algorithms.community.quality.NotAPartition as e:
             if not tlp.ConnectedTest.isConnected(self.graph):
