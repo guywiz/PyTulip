@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "brokerscore"
-version = "0.1.0"
+version = "0.1.2"
 description = "Meso level network measure pbroker score as defined by Paquet-Clouston and Bouchard"
 authors = ["Guy <guywiz@gmail.com>"]
 readme = "README.md"
