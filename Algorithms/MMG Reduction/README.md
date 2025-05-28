@@ -20,7 +20,7 @@ Contrarily to the EGC paper, the version published on this repo is undeterminist
 
 * _Erratum_. The EGC paper contains a slight mistake concerning the arithmetic operators that can be used
 to compute weights on the social network. The proper requirement is to make sure the operators do
-form a commutative semiring over the reals $\mathbb R$. The mistake has been properly addressed in
+form a commutative semiring over the reals $\mathbb R^+$. The mistake has been properly addressed in
 the _Journal of Quantitative Criminology_ version (submitted).
 
 
