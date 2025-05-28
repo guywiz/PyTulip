@@ -14,7 +14,7 @@ This code is companion to a paper submitted to the _Journal of Graph Algorithms 
 Bruno Pinaud, Maud Bénichou, Guy Melançon.
 Extraction d'un réseau social criminel par transformation d'un graphe d'enquête multivarié.
 Conférence Extraction et Gestion des Connaissances (EGC) 2023, Revue RNTI-039. pp.151-162.
-Référence HAL hal-03929950.
+Référence [HAL hal-03929950](https://hal.science/hal-03929950/).
 
 Contrarily to the EGC paper, the version published on this repo is undeterministic and (heavily) relies on graph rewriting.
 
