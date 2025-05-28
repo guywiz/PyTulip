@@ -8,18 +8,21 @@ class MMG_reduction(object):
 	This class implements a reduction algorithm starting from a multivariate multigraph
 	encapsulating data from a criminal investigation, projecting it onto a social network.
 	
-	This code is companion to a paper submitted to the Journal of Quantitative Criminology.
+	This code is companion to a paper submitted to the Journal of Graph Algorithms and Applications.
 	An early version of the algorithm was presented at the EGC French Annual Conference in 2023.
 	
 	Bruno Pinaud, Maud Bénichou, Guy Melançon.
 	Extraction d'un réseau social criminel par transformation d'un graphe d'enquête multivarié.
 	Conférence Extraction et Gestion des Connaissances (EGC) 2023, Revue RNTI-039. pp.151-162.
-	Référence HAL hal-03929950.
+	Référence HAL hal-03929950. https://hal.science/hal-03929950/
+
+	Contrarily to the EGC paper, the version published on this repo is undeterministic
+	and (heavily) relies on graph rewriting.
 
 	* Erratum. The EGC paper contains a slight mistake concerning the arithmetic operators that can be used
 	to compute weights on the social network. The proper requirement is to make sure the operators do
 	form a commutative ring over the reals. The mistake has been properly addressed in
-	the Journal of Quantitative Criminology version (submitted).
+	the Journal of Graph Algorithms and Applications version (submitted).
 
 	The algorithm computes a social network out of a multivariate multigraph, by iteratively
 	merging multiple edges and contracting simple paths connecting entitites of a given type.
@@ -32,7 +35,7 @@ class MMG_reduction(object):
 	and physical locations.
 
 	Observe that this code also applies to a variety of situations, not only those resulting
-	from criminal investigation data. Firthermore, one could use the algorithm to compute
+	from criminal investigation data. Furthermore, one could use the algorithm to compute
 	a social of network not involving actors but any other entity type. For instance, the algorithm
 	may be used to compute a social network of vehicles, assuming this is of interest as ot may reveal
 	some pattern in the activity of the network, or unveal how a third party took part in these activities.
@@ -143,7 +146,13 @@ class MMG_reduction(object):
 			weights.append(self.weight[e])
 			history.append(self.history[e])
 			compute_history.append(self.compute_history[e])
-			self.result_graph.delEdge(e)
+			try:
+				self.result_graph.delEdge(e)
+			except Exception as e:
+				print(f"Node {self.result_graph['viewLabel'][node]}")
+				print(f"Edge source {self.result_graph['viewLabel'][self.result_graph.source(e)]}")
+				print(f"Edge target {self.result_graph['viewLabel'][self.result_graph.target(e)]}")
+				raise e
 		e = self.result_graph.addEdge(neighbors[0], neighbors[1])
 		self.weight[e] = self.ring.contract_operator(weights)
 		contract_history = f"{';'.join(history)}"
@@ -191,7 +200,7 @@ class MMG_reduction(object):
 		params['result'] = connected_components
 		self.result_graph.applyDoubleAlgorithm('Connected Components', connected_components, params)
 		projected_nodes = list(filter(lambda x: self.item_type[x] == self.projected_type, [n for n in self.result_graph.getNodes()]))
-		simpath = DFS(self.result_graph, None, None, constraint = lambda x: self.item_type[x] != self.projected_type)
+		simpath = DFS(self.original_multivariate_graph, None, None, constraint = lambda x: self.item_type[x] != self.projected_type)
 		collected_paths = []
 		to_create_edges = []
 		for i, start_node in enumerate(projected_nodes):
@@ -295,7 +304,7 @@ def main(graph):
 	# graph is a multivariate multigraph
 	# the routine creates a clone subgraph of graph
 	# and a social network subgraph
-	mmr = MMG_reduction(graph)
+	mmr = MMG_reduction(graph, MMG_max_product())
 	mmr.set_projected_type(projected_type = 'PERSON')
 	mmr.set_weight_property(weight_property_name = 'weight')
 	mmr.run_algorithm()
