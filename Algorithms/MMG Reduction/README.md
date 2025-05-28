@@ -9,12 +9,14 @@ The script can be used from the command line, handling data files and directly o
 
 ### Reference
 
-This code is companion to a paper submitted to the _Journal of Quantitative Criminology_. An early version of the algorithm was presented at the _EGC French Annual Conference_ in 2023.
+This code is companion to a paper submitted to the _Journal of Graph Algorithms and Applications_. An early and deterministic version of the algorithm was presented at the _EGC French Annual Conference_ in 2023:
 	
 Bruno Pinaud, Maud Bénichou, Guy Melançon.
 Extraction d'un réseau social criminel par transformation d'un graphe d'enquête multivarié.
 Conférence Extraction et Gestion des Connaissances (EGC) 2023, Revue RNTI-039. pp.151-162.
 Référence HAL hal-03929950.
+
+Contrarily to the EGC paper, the version published on this repo is undeterministic and (heavily) relies on graph rewriting.
 
 * _Erratum_. The EGC paper contains a slight mistake concerning the arithmetic operators that can be used
 to compute weights on the social network. The proper requirement is to make sure the operators do
